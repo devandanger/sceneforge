@@ -1,0 +1,65 @@
+{
+  "version": "0.1",
+  "template": "naprej",
+  "format": {
+    "platform": "tiktok",
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "theme": {
+    "brand": "naprej",
+    "backgroundColor": "#F7F2E8",
+    "primaryTextColor": "#1E1E1E",
+    "accentColor": "#D9482B",
+    "fontFamily": "Inter"
+  },
+  "audio": {
+    "voiceover": {
+      "provider": "elevenlabs",
+      "voiceId": "default",
+      "script": "Want to reconnect with Slovenian? Naprej helps you learn useful phrases in tiny daily lessons."
+    },
+    "music": {
+      "mode": "none"
+    },
+    "captions": {
+      "mode": "scene"
+    }
+  },
+  "scenes": [
+    {
+      "id": "hook",
+      "type": "text",
+      "duration": 3,
+      "transition": "fade",
+      "title": "Want to reconnect with Slovenian?",
+      "subtitle": "Start with tiny daily phrases."
+    },
+    {
+      "id": "bled",
+      "type": "image",
+      "duration": 4,
+      "transition": "fade",
+      "image": "./assets/lake-bled.svg",
+      "caption": "Built for heritage learners."
+    },
+    {
+      "id": "app",
+      "type": "screenshot",
+      "duration": 4,
+      "transition": "slide-up",
+      "image": "./assets/app-screenshot.svg",
+      "title": "Practice real phrases"
+    },
+    {
+      "id": "cta",
+      "type": "cta",
+      "duration": 3,
+      "transition": "fade",
+      "title": "Naprej",
+      "subtitle": "Slovenian learning, one phrase at a time.",
+      "cta": "Follow for launch updates"
+    }
+  ]
+}

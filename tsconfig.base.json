@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@sceneforge/schema": [
+        "packages/schema/src/index.ts"
+      ],
+      "@sceneforge/tts": [
+        "packages/tts/src/index.ts"
+      ],
+      "@sceneforge/renderer": [
+        "packages/renderer/src/index.ts"
+      ]
+    }
+  }
+}

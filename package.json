@@ -1,0 +1,34 @@
+{
+  "name": "sceneforge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "sceneforge": "./apps/cli/bin/sceneforge.js"
+  },
+  "scripts": {
+    "sceneforge": "tsx apps/cli/src/index.ts",
+    "validate": "tsx apps/cli/src/index.ts validate",
+    "tts": "tsx apps/cli/src/index.ts tts",
+    "preview": "tsx apps/cli/src/index.ts preview",
+    "render": "tsx apps/cli/src/index.ts render",
+    "check": "tsc --noEmit"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "dependencies": {
+    "@remotion/cli": "^4.0.300",
+    "@remotion/renderer": "^4.0.300",
+    "remotion": "^4.0.300",
+    "zod": "4.3.6",
+    "zod-to-json-schema": "^3.24.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "@types/react": "^19.1.8",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3"
+  }
+}

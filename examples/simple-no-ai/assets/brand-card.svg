@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1400">
+  <rect width="1080" height="1400" fill="#f4f7f9"/>
+  <rect x="120" y="170" width="840" height="1060" rx="32" fill="#ffffff"/>
+  <rect x="180" y="250" width="720" height="110" rx="16" fill="#2b6fd9"/>
+  <text x="220" y="322" font-family="Arial" font-size="44" font-weight="800" fill="#ffffff">video.json</text>
+  <rect x="180" y="450" width="540" height="42" rx="8" fill="#121212"/>
+  <rect x="180" y="535" width="660" height="42" rx="8" fill="#c7d5eb"/>
+  <rect x="180" y="620" width="610" height="42" rx="8" fill="#c7d5eb"/>
+  <rect x="180" y="705" width="480" height="42" rx="8" fill="#c7d5eb"/>
+  <rect x="180" y="860" width="720" height="230" rx="24" fill="#e8eef7"/>
+  <circle cx="300" cy="975" r="58" fill="#2b6fd9"/>
+  <rect x="405" y="925" width="350" height="34" rx="8" fill="#121212"/>
+  <rect x="405" y="992" width="260" height="34" rx="8" fill="#7b8794"/>
+</svg>

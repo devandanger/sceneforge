@@ -1,0 +1,52 @@
+{
+  "version": "0.1",
+  "template": "naprej",
+  "format": {
+    "platform": "tiktok",
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "theme": {
+    "brand": "SceneForge",
+    "backgroundColor": "#F4F7F9",
+    "primaryTextColor": "#121212",
+    "accentColor": "#2B6FD9",
+    "fontFamily": "Inter"
+  },
+  "audio": {
+    "music": {
+      "mode": "none"
+    },
+    "captions": {
+      "mode": "scene"
+    }
+  },
+  "scenes": [
+    {
+      "id": "hook",
+      "type": "text",
+      "duration": 2,
+      "transition": "fade",
+      "title": "One JSON file.",
+      "subtitle": "A short vertical video."
+    },
+    {
+      "id": "image",
+      "type": "image",
+      "duration": 3,
+      "transition": "fade",
+      "image": "./assets/brand-card.svg",
+      "caption": "Local assets only. No AI services."
+    },
+    {
+      "id": "cta",
+      "type": "cta",
+      "duration": 2,
+      "transition": "fade",
+      "title": "SceneForge",
+      "subtitle": "Render repeatable videos from JSON.",
+      "cta": "Try the CLI"
+    }
+  ]
+}
