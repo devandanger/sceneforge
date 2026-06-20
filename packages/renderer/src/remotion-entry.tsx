@@ -11,14 +11,20 @@ const defaultProps: ResolvedRenderProps = {
       platform: "tiktok",
       width: 1080,
       height: 1920,
-      fps: 30
+      fps: 30,
+      paddingPercent: 8
     },
     theme: {
       brand: "naprej",
       backgroundColor: "#F7F2E8",
       primaryTextColor: "#1E1E1E",
       accentColor: "#D9482B",
-      fontFamily: "Inter"
+      fontFamily: "Inter",
+      layout: {
+        showBrandMark: true,
+        showTopRule: true,
+        backgroundStyle: "soft"
+      }
     },
     audio: {
       music: {
@@ -34,7 +40,9 @@ const defaultProps: ResolvedRenderProps = {
         type: "text",
         duration: 3,
         title: "SceneForge",
-        subtitle: "JSON-driven short-form video."
+        subtitle: "JSON-driven short-form video.",
+        align: "left",
+        verticalAlign: "center"
       }
     ]
   },
@@ -44,6 +52,8 @@ const defaultProps: ResolvedRenderProps = {
       duration: 3,
       title: "SceneForge",
       subtitle: "JSON-driven short-form video.",
+      align: "left",
+      verticalAlign: "center",
       startSeconds: 0
     }
   ],

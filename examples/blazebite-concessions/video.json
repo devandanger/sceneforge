@@ -12,7 +12,13 @@
     "backgroundColor": "#F4F7F9",
     "primaryTextColor": "#101820",
     "accentColor": "#FF4F1F",
-    "fontFamily": "Inter"
+    "fontFamily": "Inter",
+    "layout": {
+      "showBrandMark": true,
+      "brandMarkText": "BlazeBite",
+      "showTopRule": true,
+      "backgroundStyle": "bold"
+    }
   },
   "audio": {
     "voiceover": {

@@ -14,7 +14,9 @@ const BaseScene = z.object({
 const TextScene = BaseScene.extend({
   type: z.literal("text"),
   title: z.string().min(1),
-  subtitle: z.string().optional()
+  subtitle: z.string().optional(),
+  align: z.enum(["left", "center", "right"]).default("left"),
+  verticalAlign: z.enum(["top", "center", "bottom"]).default("center")
 });
 
 const ImageScene = BaseScene.extend({
@@ -50,14 +52,22 @@ export const VideoSchema = z.object({
     platform: z.string().default("tiktok"),
     width: z.number().int().positive().default(1080),
     height: z.number().int().positive().default(1920),
-    fps: z.number().int().positive().default(30)
+    fps: z.number().int().positive().default(30),
+    paddingPercent: z.number().min(0).max(25).optional(),
+    padding: z.number().int().nonnegative().optional()
   }),
   theme: z.object({
     brand: z.string().min(1),
     backgroundColor: HexColor.default("#F7F2E8"),
     primaryTextColor: HexColor.default("#1E1E1E"),
     accentColor: HexColor.default("#D9482B"),
-    fontFamily: z.string().default("Inter")
+    fontFamily: z.string().default("Inter"),
+    layout: z.object({
+      showBrandMark: z.boolean().default(true),
+      brandMarkText: z.string().optional(),
+      showTopRule: z.boolean().default(true),
+      backgroundStyle: z.enum(["flat", "soft", "bold"]).default("soft")
+    }).default({})
   }),
   audio: z.object({
     voiceover: z.object({

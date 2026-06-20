@@ -12,7 +12,13 @@
     "backgroundColor": "#F7F2E8",
     "primaryTextColor": "#1E1E1E",
     "accentColor": "#D9482B",
-    "fontFamily": "Inter"
+    "fontFamily": "Inter",
+    "layout": {
+      "showBrandMark": true,
+      "brandMarkText": "Naprej",
+      "showTopRule": true,
+      "backgroundStyle": "soft"
+    }
   },
   "audio": {
     "voiceover": {

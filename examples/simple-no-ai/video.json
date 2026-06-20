@@ -5,14 +5,20 @@
     "platform": "tiktok",
     "width": 1080,
     "height": 1920,
-    "fps": 30
+    "fps": 30,
+    "paddingPercent": 8
   },
   "theme": {
     "brand": "SceneForge",
     "backgroundColor": "#F4F7F9",
     "primaryTextColor": "#121212",
     "accentColor": "#2B6FD9",
-    "fontFamily": "Inter"
+    "fontFamily": "Inter",
+    "layout": {
+      "showBrandMark": false,
+      "showTopRule": false,
+      "backgroundStyle": "flat"
+    }
   },
   "audio": {
     "music": {
@@ -29,7 +35,9 @@
       "duration": 2,
       "transition": "fade",
       "title": "One JSON file.",
-      "subtitle": "A short vertical video."
+      "subtitle": "A short vertical video.",
+      "align": "center",
+      "verticalAlign": "center"
     },
     {
       "id": "image",

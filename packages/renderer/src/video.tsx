@@ -52,17 +52,18 @@ function Scene({ scene, props, template }: { scene: ResolvedScene; props: Resolv
   };
 
   if (scene.type === "image") {
+    const padding = getPadding(props.video.format);
     return (
-      <BrandFrame theme={theme} template={template} style={baseStyle}>
-        <FullImage src={scene.imagePath} />
-        {scene.caption ? <Caption>{scene.caption}</Caption> : null}
+      <BrandFrame format={props.video.format} theme={theme} template={template} style={baseStyle}>
+        <FullImage padding={padding} src={scene.imagePath} />
+        {scene.caption ? <Caption padding={padding}>{scene.caption}</Caption> : null}
       </BrandFrame>
     );
   }
 
   if (scene.type === "screenshot") {
     return (
-      <BrandFrame theme={theme} template={template} style={baseStyle}>
+      <BrandFrame format={props.video.format} theme={theme} template={template} style={baseStyle}>
         <div style={styles.screenshotLayout}>
           {scene.title ? <h2 style={styles.sceneHeading}>{scene.title}</h2> : null}
           <div style={{ ...styles.phone, borderColor: theme.primaryTextColor }}>
@@ -75,9 +76,9 @@ function Scene({ scene, props, template }: { scene: ResolvedScene; props: Resolv
 
   if (scene.type === "cta") {
     return (
-      <BrandFrame theme={theme} template={template} style={baseStyle}>
+      <BrandFrame format={props.video.format} theme={theme} template={template} style={baseStyle}>
         <div style={styles.centerStack}>
-          <p style={{ ...styles.brandMark, color: theme.accentColor }}>{theme.brand}</p>
+          <BrandMark theme={theme} />
           <h1 style={styles.title}>{scene.title}</h1>
           {scene.subtitle ? <p style={styles.subtitle}>{scene.subtitle}</p> : null}
           {scene.cta ? <p style={{ ...styles.cta, backgroundColor: theme.accentColor }}>{scene.cta}</p> : null}
@@ -87,11 +88,11 @@ function Scene({ scene, props, template }: { scene: ResolvedScene; props: Resolv
   }
 
   return (
-    <BrandFrame theme={theme} template={template} style={baseStyle}>
-      <div style={styles.centerStack}>
-        <p style={{ ...styles.brandMark, color: theme.accentColor }}>{theme.brand}</p>
-        <h1 style={styles.title}>{scene.title}</h1>
-        {scene.subtitle ? <p style={styles.subtitle}>{scene.subtitle}</p> : null}
+    <BrandFrame format={props.video.format} theme={theme} template={template} style={baseStyle}>
+      <div style={getTextStackStyle(scene.align, scene.verticalAlign)}>
+        <BrandMark theme={theme} />
+        <h1 style={{ ...styles.title, textAlign: scene.align }}>{scene.title}</h1>
+        {scene.subtitle ? <p style={{ ...styles.subtitle, textAlign: scene.align }}>{scene.subtitle}</p> : null}
       </div>
     </BrandFrame>
   );
@@ -99,46 +100,122 @@ function Scene({ scene, props, template }: { scene: ResolvedScene; props: Resolv
 
 function BrandFrame({
   children,
+  format,
   theme,
   template,
   style
 }: {
   children: React.ReactNode;
+  format: ResolvedRenderProps["video"]["format"];
   theme: ResolvedRenderProps["video"]["theme"];
   template: string;
   style: React.CSSProperties;
 }) {
   const isBlazeBite = template.toLowerCase().includes("blazebite");
+  const background = getBackground(theme, isBlazeBite);
+  const padding = getPadding(format);
   return (
     <AbsoluteFill
       style={{
         ...style,
-        padding: 86,
-        background: isBlazeBite
-          ? `linear-gradient(180deg, ${theme.backgroundColor} 0%, #101820 100%)`
-          : `radial-gradient(circle at 50% 18%, #FFFFFF 0%, ${theme.backgroundColor} 54%, #E6D8C0 100%)`
+        padding,
+        background
       }}
     >
-      <div style={{ ...styles.topRule, backgroundColor: theme.accentColor }} />
+      {theme.layout.showTopRule ? (
+        <div
+          style={{
+            ...styles.topRule,
+            top: Math.max(24, padding * 0.75),
+            left: padding,
+            backgroundColor: theme.accentColor
+          }}
+        />
+      ) : null}
       {children}
     </AbsoluteFill>
   );
 }
 
-function FullImage({ src }: { src?: string }) {
+function BrandMark({ theme }: { theme: ResolvedRenderProps["video"]["theme"] }) {
+  if (!theme.layout.showBrandMark) {
+    return null;
+  }
+
+  return <p style={{ ...styles.brandMark, color: theme.accentColor }}>{theme.layout.brandMarkText ?? theme.brand}</p>;
+}
+
+function getBackground(theme: ResolvedRenderProps["video"]["theme"], isBlazeBite: boolean) {
+  if (theme.layout.backgroundStyle === "flat") {
+    return theme.backgroundColor;
+  }
+
+  if (theme.layout.backgroundStyle === "bold" || isBlazeBite) {
+    return `linear-gradient(180deg, ${theme.backgroundColor} 0%, #101820 100%)`;
+  }
+
+  return `radial-gradient(circle at 50% 18%, #FFFFFF 0%, ${theme.backgroundColor} 54%, #E6D8C0 100%)`;
+}
+
+function getPadding(format: ResolvedRenderProps["video"]["format"]) {
+  if (format.padding !== undefined) {
+    return format.padding;
+  }
+
+  const paddingPercent = format.paddingPercent ?? 8;
+  return Math.round(Math.min(format.width, format.height) * (paddingPercent / 100));
+}
+
+function getTextStackStyle(align: "left" | "center" | "right", verticalAlign: "top" | "center" | "bottom"): React.CSSProperties {
+  const justifyContent = {
+    top: "flex-start",
+    center: "center",
+    bottom: "flex-end"
+  }[verticalAlign];
+
+  const alignItems = {
+    left: "flex-start",
+    center: "center",
+    right: "flex-end"
+  }[align];
+
+  return {
+    ...styles.centerStack,
+    justifyContent,
+    alignItems
+  };
+}
+
+function FullImage({ padding, src }: { padding: number; src?: string }) {
   if (!src) {
     return null;
   }
 
   return (
-    <div style={styles.imageShell}>
+    <div
+      style={{
+        ...styles.imageShell,
+        inset: `${padding + 64}px ${Math.max(0, padding - 28)}px ${padding + 244}px`
+      }}
+    >
       <Img src={fileUrl(src)} style={styles.image} />
     </div>
   );
 }
 
-function Caption({ children }: { children: React.ReactNode }) {
-  return <p style={styles.caption}>{children}</p>;
+function Caption({ children, padding }: { children: React.ReactNode; padding: number }) {
+  return (
+    <p
+      style={{
+        ...styles.caption,
+        left: padding,
+        right: padding,
+        bottom: padding + 26
+      }}
+    >
+      {children}
+    </p>
+  );
 }
 
 function fileUrl(src?: string) {
@@ -154,8 +231,6 @@ function fileUrl(src?: string) {
 const styles: Record<string, React.CSSProperties> = {
   topRule: {
     position: "absolute",
-    top: 64,
-    left: 86,
     width: 140,
     height: 10,
     borderRadius: 5
@@ -200,7 +275,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   imageShell: {
     position: "absolute",
-    inset: "150px 58px 330px",
     overflow: "hidden",
     borderRadius: 8,
     boxShadow: "0 30px 80px rgba(0,0,0,0.22)"
@@ -212,9 +286,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   caption: {
     position: "absolute",
-    left: 86,
-    right: 86,
-    bottom: 112,
     margin: 0,
     fontSize: 58,
     lineHeight: 1.08,
