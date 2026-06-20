@@ -2,22 +2,24 @@
 
 SceneForge is a local-first JSON video builder for repeatable branded short-form marketing videos.
 
-## Commands
+## Install
+
+```sh
+npm install -g sceneforge      # or run ad hoc: npx sceneforge <command>
+sceneforge validate ./video.json
+sceneforge render ./video.json out.mp4
+```
+
+Requires Node 18+. `render`/`preview` use Remotion, which downloads a headless
+Chromium on first run. Voiceover (`tts`) needs ElevenLabs credentials (see below).
+
+## Commands (from a clone)
 
 ```sh
 npm install
 npm run sceneforge -- validate ./examples/simple-no-ai/video.json
 npm run sceneforge -- preview ./examples/simple-no-ai/video.json
 npm run sceneforge -- render ./examples/simple-no-ai/video.json
-```
-
-After `npm install`, the local binary also works:
-
-```sh
-sceneforge validate ./examples/simple-no-ai/video.json
-sceneforge preview ./examples/simple-no-ai/video.json
-sceneforge render ./examples/simple-no-ai/video.json
-sceneforge tts ./examples/naprej-launch/video.json
 ```
 
 ## Agentic / scripted use (`--json`)
@@ -41,6 +43,20 @@ Error `path` values match the JSON field that failed validation, so a generating
 agent can correct the exact field and retry. Commands exit non-zero on failure.
 Use `render` (not the interactive `preview`) in headless/agent contexts, and pair
 with `SCENEFORGE_SKIP_TTS=1` to render without TTS credentials.
+
+### Discovering capabilities
+
+A workflow can bootstrap the entire tool from two commands, with no static docs:
+
+```sh
+sceneforge capabilities --json   # commands, flags, env, and which are agent-safe
+sceneforge schema --json         # the video.json data contract, every field documented
+```
+
+`capabilities` reports each command's flags, required env vars, and an `agentSafe`
+flag (false for the interactive `preview`). `schema` is generated from the Zod
+definitions, so new scene types and fields appear automatically — each carries a
+`description`, enforced by `npm run check`.
 
 ## No-AI Example
 

@@ -1,10 +1,16 @@
 {
   "name": "sceneforge",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "bin": {
-    "sceneforge": "./apps/cli/bin/sceneforge.js"
+    "sceneforge": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
   },
   "scripts": {
     "sceneforge": "tsx apps/cli/src/index.ts",
@@ -12,7 +18,11 @@
     "tts": "tsx apps/cli/src/index.ts tts",
     "preview": "tsx apps/cli/src/index.ts preview",
     "render": "tsx apps/cli/src/index.ts render",
-    "check": "tsc --noEmit"
+    "build": "node scripts/build.mjs",
+    "check": "tsc --noEmit && npm run check:schema",
+    "check:schema": "tsx scripts/check-schema-descriptions.ts",
+    "test": "tsx --test \"apps/**/*.test.ts\" \"packages/**/*.test.ts\"",
+    "prepublishOnly": "npm run check && npm test && npm run build"
   },
   "workspaces": [
     "apps/*",
@@ -21,6 +31,8 @@
   "dependencies": {
     "@remotion/cli": "^4.0.300",
     "@remotion/renderer": "^4.0.300",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
     "remotion": "^4.0.300",
     "zod": "4.3.6",
     "zod-to-json-schema": "^3.24.6"
@@ -28,6 +40,7 @@
   "devDependencies": {
     "@types/node": "^22.15.3",
     "@types/react": "^19.1.8",
+    "esbuild": "^0.28.0",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3"
   }

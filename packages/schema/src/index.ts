@@ -5,37 +5,40 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 
 const HexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Expected a 6-digit hex color.");
 
+// Every field carries a .describe() so the generated JSON Schema is self-documenting
+// for agentic workflows. scripts/check-schema-descriptions.ts fails CI if any field
+// is missing one — keep descriptions on all new fields.
 const BaseScene = z.object({
-  id: z.string().min(1).optional(),
-  duration: z.number().positive(),
-  transition: z.enum(["none", "fade", "slide-up"]).optional()
+  id: z.string().min(1).optional().describe("Optional stable scene identifier; used as the render sequence key."),
+  duration: z.number().positive().describe("Scene duration in seconds."),
+  transition: z.enum(["none", "fade", "slide-up"]).optional().describe("Entrance/exit animation; omitted scenes fade, \"none\" disables animation.")
 });
 
 const TextScene = BaseScene.extend({
-  type: z.literal("text"),
-  title: z.string().min(1),
-  subtitle: z.string().optional(),
-  align: z.enum(["left", "center", "right"]).default("left"),
-  verticalAlign: z.enum(["top", "center", "bottom"]).default("center")
+  type: z.literal("text").describe("Discriminator for a title/subtitle text scene."),
+  title: z.string().min(1).describe("Primary headline text."),
+  subtitle: z.string().optional().describe("Optional supporting line beneath the title."),
+  align: z.enum(["left", "center", "right"]).default("left").describe("Horizontal text alignment within the brand frame."),
+  verticalAlign: z.enum(["top", "center", "bottom"]).default("center").describe("Vertical text alignment within the brand frame.")
 });
 
 const ImageScene = BaseScene.extend({
-  type: z.literal("image"),
-  image: z.string().min(1),
-  caption: z.string().optional()
+  type: z.literal("image").describe("Discriminator for a full-bleed image scene with optional caption."),
+  image: z.string().min(1).describe("Path to a local image asset, relative to the video.json directory."),
+  caption: z.string().optional().describe("Optional caption rendered over the bottom of the image.")
 });
 
 const ScreenshotScene = BaseScene.extend({
-  type: z.literal("screenshot"),
-  image: z.string().min(1),
-  title: z.string().optional()
+  type: z.literal("screenshot").describe("Discriminator for a phone-mockup screenshot scene."),
+  image: z.string().min(1).describe("Path to a local screenshot asset, relative to the video.json directory."),
+  title: z.string().optional().describe("Optional heading shown above the phone mockup.")
 });
 
 const CtaScene = BaseScene.extend({
-  type: z.literal("cta"),
-  title: z.string().min(1),
-  subtitle: z.string().optional(),
-  cta: z.string().optional()
+  type: z.literal("cta").describe("Discriminator for a call-to-action scene."),
+  title: z.string().min(1).describe("Call-to-action headline."),
+  subtitle: z.string().optional().describe("Optional supporting line beneath the CTA title."),
+  cta: z.string().optional().describe("Optional button-style call-to-action label.")
 });
 
 export const SceneSchema = z.discriminatedUnion("type", [
@@ -46,45 +49,45 @@ export const SceneSchema = z.discriminatedUnion("type", [
 ]);
 
 export const VideoSchema = z.object({
-  version: z.string().default("0.1"),
-  template: z.enum(["naprej", "blazebite"]).optional(),
+  version: z.string().default("0.1").describe("SceneForge document schema version."),
+  template: z.enum(["naprej", "blazebite"]).optional().describe("Named visual template; falls back to theme.brand when unset."),
   format: z.object({
-    platform: z.string().default("tiktok"),
-    width: z.number().int().positive().default(1080),
-    height: z.number().int().positive().default(1920),
-    fps: z.number().int().positive().default(30),
-    paddingPercent: z.number().min(0).max(25).optional(),
-    padding: z.number().int().nonnegative().optional()
-  }),
+    platform: z.string().default("tiktok").describe("Target platform label (informational)."),
+    width: z.number().int().positive().default(1080).describe("Output width in pixels."),
+    height: z.number().int().positive().default(1920).describe("Output height in pixels."),
+    fps: z.number().int().positive().default(30).describe("Frames per second."),
+    paddingPercent: z.number().min(0).max(25).optional().describe("Frame padding as a percent of the shorter side; defaults to 8 when both padding and paddingPercent are omitted."),
+    padding: z.number().int().nonnegative().optional().describe("Explicit frame padding in pixels; overrides paddingPercent when set.")
+  }).describe("Output dimensions, frame rate, and padding."),
   theme: z.object({
-    brand: z.string().min(1),
-    backgroundColor: HexColor.default("#F7F2E8"),
-    primaryTextColor: HexColor.default("#1E1E1E"),
-    accentColor: HexColor.default("#D9482B"),
-    fontFamily: z.string().default("Inter"),
+    brand: z.string().min(1).describe("Brand name; shown as the brand mark unless layout.brandMarkText overrides it."),
+    backgroundColor: HexColor.default("#F7F2E8").describe("Base background color (6-digit hex)."),
+    primaryTextColor: HexColor.default("#1E1E1E").describe("Primary text color (6-digit hex)."),
+    accentColor: HexColor.default("#D9482B").describe("Accent color for the top rule, brand mark, and CTA button (6-digit hex)."),
+    fontFamily: z.string().default("Inter").describe("Primary font family."),
     layout: z.object({
-      showBrandMark: z.boolean().default(true),
-      brandMarkText: z.string().optional(),
-      showTopRule: z.boolean().default(true),
-      backgroundStyle: z.enum(["flat", "soft", "bold"]).default("soft")
-    }).default({})
-  }),
+      showBrandMark: z.boolean().default(true).describe("Whether to render the brand mark on text/CTA scenes."),
+      brandMarkText: z.string().optional().describe("Overrides the brand mark text; defaults to theme.brand."),
+      showTopRule: z.boolean().default(true).describe("Whether to render the accent top rule."),
+      backgroundStyle: z.enum(["flat", "soft", "bold"]).default("soft").describe("Background treatment: flat color, soft radial, or bold gradient.")
+    }).default({}).describe("Toggles for renderer chrome (brand mark, top rule, background style).")
+  }).describe("Brand colors, typography, and layout chrome."),
   audio: z.object({
     voiceover: z.object({
-      provider: z.literal("elevenlabs"),
-      voiceId: z.string().default("default"),
-      script: z.string().min(1)
-    }).optional(),
+      provider: z.literal("elevenlabs").describe("TTS provider; only \"elevenlabs\" is supported."),
+      voiceId: z.string().default("default").describe("ElevenLabs voice id; \"default\" uses ELEVENLABS_DEFAULT_VOICE_ID."),
+      script: z.string().min(1).describe("Voiceover script text to synthesize.")
+    }).optional().describe("ElevenLabs text-to-speech voiceover."),
     music: z.object({
-      mode: z.enum(["none", "file"]).default("none"),
-      file: z.string().optional(),
-      volume: z.number().min(0).max(1).default(0.18)
-    }).optional(),
+      mode: z.enum(["none", "file"]).default("none").describe("Music source: none, or a local file."),
+      file: z.string().optional().describe("Path to a local audio file, relative to video.json; required when mode is \"file\"."),
+      volume: z.number().min(0).max(1).default(0.18).describe("Music volume from 0 to 1.")
+    }).optional().describe("Background music track."),
     captions: z.object({
-      mode: z.enum(["none", "scene"]).default("scene")
-    }).optional()
-  }).default({}),
-  scenes: z.array(SceneSchema).min(1)
+      mode: z.enum(["none", "scene"]).default("scene").describe("Caption mode: none, or per-scene captions.")
+    }).optional().describe("Caption rendering settings.")
+  }).default({}).describe("Optional voiceover, music, and caption settings."),
+  scenes: z.array(SceneSchema).min(1).describe("Ordered list of scenes; total video duration is the sum of scene durations.")
 });
 
 export type Video = z.infer<typeof VideoSchema>;
@@ -188,7 +191,11 @@ export function printValidationErrors(error: z.ZodError) {
 export function exportVideoJsonSchema() {
   return zodToJsonSchema(VideoSchema, {
     name: "SceneForgeVideo",
-    target: "jsonSchema7"
+    target: "jsonSchema7",
+    // Inline every subschema so descriptions appear on each scene branch instead
+    // of collapsing to a $ref to the first occurrence — agents consuming the
+    // schema get docs without resolving refs.
+    $refStrategy: "none"
   });
 }
 

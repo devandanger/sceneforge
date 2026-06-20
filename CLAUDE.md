@@ -14,13 +14,26 @@ npm run sceneforge -- validate <video.json>   # parse + report scenes/duration
 npm run sceneforge -- preview  <video.json>    # open Remotion Studio
 npm run sceneforge -- render   <video.json> [output.mp4]
 npm run sceneforge -- tts      <video.json>    # generate voiceover only
-npm run sceneforge -- schema   [out.schema.json]  # emit JSON Schema from Zod
-npm run check                                   # tsc --noEmit (only typecheck/CI gate)
+npm run sceneforge -- schema   [out.schema.json]  # emit JSON Schema from Zod (data contract)
+npm run sceneforge -- capabilities                # machine-readable command/flag/env manifest
+npm run check                                   # tsc --noEmit + schema description gate
+npm test                                        # node:test suites (via tsx)
+npm run build                                   # bundle the CLI to dist/ for npm publish
 ```
 
-There is **no test runner and no linter** — `npm run check` (TypeScript `--noEmit`) is the only automated verification. The CLI runs via `tsx` directly against TypeScript source; nothing is compiled to `dist/`.
+Verification is `npm run check` + `npm test`; there is **no linter**. `check` runs `tsc --noEmit` then `check:schema` (`scripts/check-schema-descriptions.ts`), which fails if any field in the generated JSON Schema lacks a `.describe()`. `npm test` runs Node's built-in `node:test` through `tsx` over `**/*.test.ts` (no extra test framework). Tests are co-located as `*.test.ts` next to source and are typechecked by `tsc`. The CLI runs via `tsx` directly against TypeScript source; nothing is compiled to `dist/`.
+
+Test coverage by layer: `packages/schema` — defaults, validation errors, cumulative scene timing, asset resolution, base64 prop inlining; `packages/tts` — `ensureVoiceover` branch behavior (skip/cache/error paths) using fake contexts, no network; `apps/cli` — the `--json` contract (stdout purity, exit codes, structured errors, capabilities manifest) by spawning the CLI as a subprocess. Renders are not covered automatically (slow; they shell out to Remotion) — smoke-test with `SCENEFORGE_SKIP_TTS=1 … render` on `examples/simple-no-ai`.
 
 `validate`, `render`, and `tts` accept `--json` for agentic/scripted use: a single JSON object is written to stdout while all human logs and Remotion render output are routed to stderr (see the `info`/`emit`/`runRemotion` helpers in `apps/cli/src/index.ts`). Validation-error `path` fields are the dotted JSON path that failed. Keep this stdout-purity invariant when adding commands or log lines.
+
+**Capability discovery for agents.** Two commands let a workflow bootstrap the whole tool from `--json` output alone, with no static docs: `capabilities` describes the *commands* (flags, env vars, which are `agentSafe` vs. interactive), and `schema` describes the *data* (every field, self-documented). When you add a command or flag, update the `COMMANDS`/`ENV_VARS` manifest in `apps/cli/src/index.ts` so `capabilities` stays accurate; when you add a schema field, the CI gate forces a `.describe()`.
+
+### Distribution (npm CLI)
+
+The published artifact is the root package (`sceneforge`); `bin` → `dist/index.js`, `files` ships only `dist/`, and `prepublishOnly` runs check + test + build. `npm run build` (`scripts/build.mjs`, esbuild) bundles `apps/cli` **and inlines the `@sceneforge/*` workspace packages** into one `dist/index.js` — npm deps and node builtins stay external (only `zod`/`zod-to-json-schema` end up imported). The workspace packages themselves stay `private` and are never published; they exist only as source the bundle absorbs. The renderer is **not** bundled — its `.tsx` is copied to `dist/renderer/` and Remotion bundles it itself at render time (its only runtime imports are `react` + `remotion`; the `@sceneforge/schema` import is type-only and erased).
+
+**Dual-layout gotcha:** the CLI runs from two directory depths — `apps/cli/src/index.ts` (dev, via tsx) and `dist/index.js` (installed). Any path derived from `import.meta.url` must handle both: `getRendererEntry` probes the bundled `./renderer` first then falls back to the monorepo path, `resolveRemotionBin` resolves `@remotion/cli` via `createRequire` (never `npx`/PATH), and `readCliVersion` walks up looking for the package named `sceneforge` (a fixed `../../../package.json` would read the *consumer's* manifest once installed). Verify packaging changes with `npm pack` + install into a temp dir outside the repo, not just in-repo.
 
 `examples/simple-no-ai/video.json` needs no AI credentials and is the fastest end-to-end smoke test of the renderer.
 
