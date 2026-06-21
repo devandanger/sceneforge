@@ -1,0 +1,16 @@
+version: 2
+updates:
+  # npm dependencies (grouped to reduce PR noise)
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      all-npm:
+        patterns: ["*"]
+
+  # GitHub Actions — keeps the SHA-pinned actions current
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
