@@ -1,10 +1,16 @@
 {
   "name": "sceneforge",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/devandanger/sceneforge.git"
+  },
+  "homepage": "https://github.com/devandanger/sceneforge#readme",
+  "bugs": "https://github.com/devandanger/sceneforge/issues",
   "bin": {
-    "sceneforge": "./dist/index.js"
+    "sceneforge": "dist/index.js"
   },
   "files": [
     "dist",
