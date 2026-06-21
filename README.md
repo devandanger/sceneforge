@@ -110,6 +110,40 @@ SCENEFORGE_SKIP_TTS=1 npm run sceneforge -- render ./examples/naprej-launch/vide
 npm run sceneforge -- schema ./schema/sceneforge-video.schema.json
 ```
 
+## Releasing
+
+Releases are published to npm by CI, triggered by a version tag — you never run
+`npm publish` (or deal with 2FA) locally. The `release.yml` workflow verifies the
+tag matches `package.json`, runs the full gate (`prepublishOnly`: check → test →
+check:package → build), then `npm publish --provenance`.
+
+```sh
+git checkout main && git pull          # clean, up-to-date tree
+# ...commit any code changes first (npm version requires a clean tree)...
+
+npm version patch                      # bumps package.json, commits, tags vX.Y.Z
+                                       # (use minor for new features, major for breaking changes)
+git push --follow-tags                 # the tag push triggers the release workflow
+```
+
+Verify:
+
+```sh
+npm view sceneforge version
+```
+
+Notes:
+
+- **Never publish by hand.** CI's `NPM_TOKEN` is an automation token that bypasses
+  2FA; a manual `npm publish` hits the interactive 2FA wall.
+- **If a release run fails, bump forward** (`npm version patch` again) rather than
+  force-moving a tag — tags should stay immutable.
+- **Version and tag must agree.** `npm version` keeps them in sync and the workflow
+  guards against a mismatch.
+- Requires an `NPM_TOKEN` repo secret (automation token, or a `sceneforge`-scoped
+  granular token with 2FA bypass) and a public repo (for provenance).
+- Optional: `gh release create vX.Y.Z --generate-notes` for human-readable notes.
+
 ## License
 
 SceneForge is licensed under the [MIT License](./LICENSE).
