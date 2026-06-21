@@ -109,3 +109,14 @@ SCENEFORGE_SKIP_TTS=1 npm run sceneforge -- render ./examples/naprej-launch/vide
 ```sh
 npm run sceneforge -- schema ./schema/sceneforge-video.schema.json
 ```
+
+## License
+
+SceneForge is licensed under the [MIT License](./LICENSE).
+
+**Note on rendering:** `render` and `preview` use [Remotion](https://www.remotion.dev),
+which is source-available under its own license — not MIT. Remotion is free for
+individuals and small companies, but **companies above its team-size threshold
+need a paid [Remotion Company License](https://www.remotion.pro)**. This applies
+to anyone rendering with SceneForge. See [`NOTICE.md`](./NOTICE.md) for full
+third-party licensing details.
