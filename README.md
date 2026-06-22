@@ -120,7 +120,9 @@ npm run sceneforge -- schema ./schema/sceneforge-video.schema.json
 Releases are published to npm by CI, triggered by a version tag — you never run
 `npm publish` (or deal with 2FA) locally. The `release.yml` workflow verifies the
 tag matches `package.json`, runs the full gate (`prepublishOnly`: check → test →
-check:package → build), then `npm publish --provenance`.
+check:package → build), then `npm publish --provenance`. The publish job runs in a
+protected `release` environment, so the run **pauses for maintainer approval**
+before it goes live.
 
 ```sh
 git checkout main && git pull          # clean, up-to-date tree
@@ -139,6 +141,8 @@ npm view sceneforge version
 
 Notes:
 
+- **Approve the release.** After the tag push, the run waits in the `release`
+  environment — approve it in the Actions tab to publish.
 - **Never publish by hand.** CI's `NPM_TOKEN` is an automation token that bypasses
   2FA; a manual `npm publish` hits the interactive 2FA wall.
 - **If a release run fails, bump forward** (`npm version patch` again) rather than

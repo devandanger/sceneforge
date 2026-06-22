@@ -35,6 +35,18 @@ The published artifact is the root package (`sceneforge`); `bin` → `dist/index
 
 **Dual-layout gotcha:** the CLI runs from two directory depths — `apps/cli/src/index.ts` (dev, via tsx) and `dist/index.js` (installed). Any path derived from `import.meta.url` must handle both: `getRendererEntry` probes the bundled `./renderer` first then falls back to the monorepo path, `resolveRemotionBin` resolves `@remotion/cli` via `createRequire` (never `npx`/PATH), and `readCliVersion` walks up looking for the package named `sceneforge` (a fixed `../../../package.json` would read the *consumer's* manifest once installed). Verify packaging changes with `npm pack` + install into a temp dir outside the repo, not just in-repo.
 
+### Release & CI hardening (intentional — don't weaken)
+
+Publishing is automated and deliberately locked down. Several of these look like cleanup targets but are not:
+
+- **GitHub Actions are pinned to commit SHAs** in `.github/workflows/*.yml` (with a `# v5` comment). Do **not** revert them to `@v5` tags — the pin stops a hijacked action tag from running inside the publish job that holds `NPM_TOKEN`. Dependabot (`.github/dependabot.yml`, `github-actions` ecosystem) bumps the SHAs via PRs; the repo also restricts allowed actions to GitHub-owned + verified.
+- **`release.yml` runs in the `release` GitHub Environment**, which has a required reviewer — publishes pause for manual approval. CI (`ci.yml`) uses least-privilege `permissions: contents: read`.
+- **`main` and `v*` tags are protected by rulesets** (no force-push, no deletion/rewrite). This is *why* a failed release bumps forward (`npm version patch`) instead of moving a tag.
+- **Provenance requires `repository.url` in `package.json` and a public repo** — don't drop the `repository` field (a missing one fails publish with E422).
+- **`NPM_TOKEN`** must allow non-interactive publish: an automation token, or a `sceneforge`-scoped granular token with 2FA bypass. A plain publish/granular token without bypass fails with E403; a token that can't create the package fails with E404.
+
+Vulnerability reporting and supported-version policy live in `SECURITY.md` (GitHub private vulnerability reporting is enabled).
+
 `examples/simple-no-ai/video.json` needs no AI credentials and is the fastest end-to-end smoke test of the renderer.
 
 ### Running without ElevenLabs credentials
