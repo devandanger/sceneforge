@@ -4,6 +4,68 @@ import { z } from "zod/v3";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
 const HexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Expected a 6-digit hex color.");
+const CssColor = z.string().min(1).describe("Text or fill color as a CSS-compatible color string, preferably a hex color.");
+
+const OverlayPosition = z.enum([
+  "top-left",
+  "top-center",
+  "top-right",
+  "center-left",
+  "center",
+  "center-right",
+  "bottom-left",
+  "bottom-center",
+  "bottom-right"
+]);
+
+const TextOverlay = z.object({
+  type: z.literal("text").describe("Discriminator for a text overlay."),
+  text: z.string().min(1).describe("Overlay text content."),
+  position: OverlayPosition.default("center").describe("Preset placement within the full video frame; ignored when nested inside a group."),
+  xPercent: z.number().min(0).max(100).optional().describe("Optional horizontal anchor as a percent of video width; overrides position horizontally."),
+  yPercent: z.number().min(0).max(100).optional().describe("Optional vertical anchor as a percent of video height; overrides position vertically."),
+  align: z.enum(["left", "center", "right"]).default("left").describe("Text alignment within the overlay box."),
+  fontSizePercent: z.number().positive().max(20).default(4).describe("Font size as a percent of the shorter video side."),
+  color: CssColor.optional().describe("Overlay text color; defaults to theme.primaryTextColor."),
+  backgroundColor: CssColor.optional().describe("Optional background color behind the text."),
+  paddingPercent: z.number().min(0).max(10).default(0).describe("Internal overlay padding as a percent of the shorter video side."),
+  maxWidthPercent: z.number().positive().max(100).default(80).describe("Maximum text box width as a percent of video width."),
+  opacity: z.number().min(0).max(1).default(1).describe("Overlay opacity from 0 to 1.")
+});
+
+const ImageOverlay = z.object({
+  type: z.literal("image").describe("Discriminator for an image overlay."),
+  src: z.string().min(1).describe("Path to a local image asset, relative to the video.json directory."),
+  position: OverlayPosition.default("center").describe("Preset placement within the full video frame; ignored when nested inside a group."),
+  xPercent: z.number().min(0).max(100).optional().describe("Optional horizontal anchor as a percent of video width; overrides position horizontally."),
+  yPercent: z.number().min(0).max(100).optional().describe("Optional vertical anchor as a percent of video height; overrides position vertically."),
+  widthPercent: z.number().positive().max(100).default(20).describe("Rendered image width as a percent of video width."),
+  opacity: z.number().min(0).max(1).default(1).describe("Overlay opacity from 0 to 1.")
+});
+
+const GroupChildOverlay = z.discriminatedUnion("type", [
+  TextOverlay.omit({ position: true, xPercent: true, yPercent: true }),
+  ImageOverlay.omit({ position: true, xPercent: true, yPercent: true })
+]).describe("Overlay that can be nested inside a group; children are laid out by the group.");
+
+const GroupOverlay = z.object({
+  type: z.literal("group").describe("Discriminator for an overlay group that stacks child overlays."),
+  position: OverlayPosition.default("center").describe("Preset placement of the group within the full video frame."),
+  xPercent: z.number().min(0).max(100).optional().describe("Optional horizontal group anchor as a percent of video width; overrides position horizontally."),
+  yPercent: z.number().min(0).max(100).optional().describe("Optional vertical group anchor as a percent of video height; overrides position vertically."),
+  direction: z.enum(["vertical", "horizontal"]).default("vertical").describe("Child layout direction; vertical behaves like a VStack, horizontal behaves like an HStack."),
+  align: z.enum(["start", "center", "end", "stretch"]).default("start").describe("Child alignment on the cross axis."),
+  gapPercent: z.number().min(0).max(10).default(1).describe("Gap between children as a percent of the shorter video side."),
+  maxWidthPercent: z.number().positive().max(100).default(80).describe("Maximum group width as a percent of video width."),
+  opacity: z.number().min(0).max(1).default(1).describe("Group opacity from 0 to 1."),
+  children: z.array(GroupChildOverlay).min(1).describe("Ordered child overlays rendered inside the group.")
+});
+
+const OverlaySchema = z.discriminatedUnion("type", [
+  TextOverlay,
+  ImageOverlay,
+  GroupOverlay
+]).describe("Overlay rendered above the scene base layer; array order controls stacking order.");
 
 // Every field carries a .describe() so the generated JSON Schema is self-documenting
 // for agentic workflows. scripts/check-schema-descriptions.ts fails CI if any field
@@ -11,7 +73,8 @@ const HexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Expected a 6-digit hex c
 const BaseScene = z.object({
   id: z.string().min(1).optional().describe("Optional stable scene identifier; used as the render sequence key."),
   duration: z.number().positive().describe("Scene duration in seconds."),
-  transition: z.enum(["none", "fade", "slide-up"]).optional().describe("Entrance/exit animation; omitted scenes fade, \"none\" disables animation.")
+  transition: z.enum(["none", "fade", "slide-up"]).optional().describe("Entrance/exit animation; omitted scenes fade, \"none\" disables animation."),
+  overlays: z.array(OverlaySchema).optional().describe("Optional overlays rendered above the scene base layer; supports text, image, and grouped stacks.")
 });
 
 const TextScene = BaseScene.extend({
@@ -92,6 +155,9 @@ export const VideoSchema = z.object({
 
 export type Video = z.infer<typeof VideoSchema>;
 export type Scene = z.infer<typeof SceneSchema>;
+export type Overlay = z.infer<typeof OverlaySchema>;
+type GroupChildOverlayValue = z.infer<typeof GroupChildOverlay>;
+type AnyOverlayValue = Overlay | GroupChildOverlayValue;
 
 export type ResolvedScene = Scene & {
   imagePath?: string;
@@ -139,6 +205,8 @@ export function loadAndResolveVideo(videoJsonPath: string): { ok: true; value: V
       resolved.imagePath = resolveExistingAsset(projectDir, scene.image);
     }
 
+    validateOverlayAssets(projectDir, scene.overlays);
+
     cursor += scene.duration;
     return resolved;
   });
@@ -163,7 +231,8 @@ export function writeResolvedProps(context: VideoContext, voiceoverPath?: string
     video: context.video,
     scenes: context.scenes.map((scene) => ({
       ...scene,
-      imagePath: scene.imagePath ? assetDataUrl(scene.imagePath) : undefined
+      imagePath: scene.imagePath ? assetDataUrl(scene.imagePath) : undefined,
+      overlays: inlineOverlayAssets(context.projectDir, scene.overlays) as Overlay[] | undefined
     })),
     voiceoverPath: voiceoverPath ? assetDataUrl(voiceoverPath) : undefined,
     musicPath: musicPath ? assetDataUrl(musicPath) : undefined,
@@ -172,6 +241,44 @@ export function writeResolvedProps(context: VideoContext, voiceoverPath?: string
   const propsPath = path.join(context.cacheDir, "render-props.json");
   fs.writeFileSync(propsPath, `${JSON.stringify(props, null, 2)}\n`);
   return propsPath;
+}
+
+function validateOverlayAssets(projectDir: string, overlays?: AnyOverlayValue[]) {
+  if (!overlays) {
+    return;
+  }
+
+  for (const overlay of overlays) {
+    if (overlay.type === "image") {
+      resolveExistingAsset(projectDir, overlay.src);
+    } else if (overlay.type === "group") {
+      validateOverlayAssets(projectDir, overlay.children);
+    }
+  }
+}
+
+function inlineOverlayAssets(projectDir: string, overlays?: AnyOverlayValue[]): AnyOverlayValue[] | undefined {
+  if (!overlays) {
+    return undefined;
+  }
+
+  return overlays.map((overlay) => {
+    if (overlay.type === "image") {
+      return {
+        ...overlay,
+        src: assetDataUrl(resolveExistingAsset(projectDir, overlay.src))
+      };
+    }
+
+    if (overlay.type === "group") {
+      return {
+        ...overlay,
+        children: (inlineOverlayAssets(projectDir, overlay.children) ?? []) as GroupChildOverlayValue[]
+      };
+    }
+
+    return overlay;
+  });
 }
 
 export function resolveExistingAsset(projectDir: string, assetPath: string): string {

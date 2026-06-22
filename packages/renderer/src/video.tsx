@@ -8,7 +8,7 @@ import {
   useCurrentFrame,
   useVideoConfig
 } from "remotion";
-import type { ResolvedRenderProps, ResolvedScene } from "@sceneforge/schema";
+import type { Overlay, ResolvedRenderProps, ResolvedScene } from "@sceneforge/schema";
 
 export function SceneForgeVideo(props: ResolvedRenderProps) {
   const { fps } = useVideoConfig();
@@ -57,6 +57,7 @@ function Scene({ scene, props, template }: { scene: ResolvedScene; props: Resolv
       <BrandFrame format={props.video.format} theme={theme} template={template} style={baseStyle}>
         <FullImage padding={padding} src={scene.imagePath} />
         {scene.caption ? <Caption padding={padding}>{scene.caption}</Caption> : null}
+        <OverlayLayer format={props.video.format} overlays={scene.overlays} theme={theme} />
       </BrandFrame>
     );
   }
@@ -70,6 +71,7 @@ function Scene({ scene, props, template }: { scene: ResolvedScene; props: Resolv
             <Img src={fileUrl(scene.imagePath)} style={styles.phoneImage} />
           </div>
         </div>
+        <OverlayLayer format={props.video.format} overlays={scene.overlays} theme={theme} />
       </BrandFrame>
     );
   }
@@ -83,6 +85,7 @@ function Scene({ scene, props, template }: { scene: ResolvedScene; props: Resolv
           {scene.subtitle ? <p style={styles.subtitle}>{scene.subtitle}</p> : null}
           {scene.cta ? <p style={{ ...styles.cta, backgroundColor: theme.accentColor }}>{scene.cta}</p> : null}
         </div>
+        <OverlayLayer format={props.video.format} overlays={scene.overlays} theme={theme} />
       </BrandFrame>
     );
   }
@@ -94,6 +97,7 @@ function Scene({ scene, props, template }: { scene: ResolvedScene; props: Resolv
         <h1 style={{ ...styles.title, textAlign: scene.align }}>{scene.title}</h1>
         {scene.subtitle ? <p style={{ ...styles.subtitle, textAlign: scene.align }}>{scene.subtitle}</p> : null}
       </div>
+      <OverlayLayer format={props.video.format} overlays={scene.overlays} theme={theme} />
     </BrandFrame>
   );
 }
@@ -183,6 +187,137 @@ function getTextStackStyle(align: "left" | "center" | "right", verticalAlign: "t
     ...styles.centerStack,
     justifyContent,
     alignItems
+  };
+}
+
+function OverlayLayer({
+  format,
+  overlays,
+  theme
+}: {
+  format: ResolvedRenderProps["video"]["format"];
+  overlays?: Overlay[];
+  theme: ResolvedRenderProps["video"]["theme"];
+}) {
+  if (!overlays?.length) {
+    return null;
+  }
+
+  return (
+    <AbsoluteFill style={{ pointerEvents: "none" }}>
+      {overlays.map((overlay, index) => (
+        <OverlayItem key={index} format={format} overlay={overlay} theme={theme} />
+      ))}
+    </AbsoluteFill>
+  );
+}
+
+function OverlayItem({
+  format,
+  inGroup = false,
+  overlay,
+  theme
+}: {
+  format: ResolvedRenderProps["video"]["format"];
+  inGroup?: boolean;
+  overlay: Overlay;
+  theme: ResolvedRenderProps["video"]["theme"];
+}) {
+  const frameStyle = inGroup ? undefined : getOverlayPositionStyle(overlay, format);
+
+  if (overlay.type === "text") {
+    return (
+      <div style={{ ...frameStyle, ...getOverlayTextStyle(overlay, format, theme) }}>
+        {overlay.text}
+      </div>
+    );
+  }
+
+  if (overlay.type === "image") {
+    return (
+      <div style={{ ...frameStyle, width: `${overlay.widthPercent}%`, opacity: overlay.opacity }}>
+        <Img src={fileUrl(overlay.src)} style={{ width: "100%", display: "block" }} />
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ ...frameStyle, ...getGroupStyle(overlay, format) }}>
+      {overlay.children.map((child, index) => (
+        <OverlayItem key={index} format={format} inGroup overlay={child as Overlay} theme={theme} />
+      ))}
+    </div>
+  );
+}
+
+function getOverlayPositionStyle(overlay: Overlay, format: ResolvedRenderProps["video"]["format"]): React.CSSProperties {
+  const anchor = getOverlayAnchor(overlay.position, overlay.xPercent, overlay.yPercent);
+  return {
+    position: "absolute",
+    left: `${anchor.x}%`,
+    top: `${anchor.y}%`,
+    transform: `translate(${anchor.translateX}%, ${anchor.translateY}%)`,
+    maxWidth: `${"maxWidthPercent" in overlay ? overlay.maxWidthPercent : 100}%`
+  };
+}
+
+function getOverlayAnchor(position: Overlay["position"], xPercent?: number, yPercent?: number) {
+  const presets: Record<Overlay["position"], { x: number; y: number; translateX: number; translateY: number }> = {
+    "top-left": { x: 0, y: 0, translateX: 0, translateY: 0 },
+    "top-center": { x: 50, y: 0, translateX: -50, translateY: 0 },
+    "top-right": { x: 100, y: 0, translateX: -100, translateY: 0 },
+    "center-left": { x: 0, y: 50, translateX: 0, translateY: -50 },
+    center: { x: 50, y: 50, translateX: -50, translateY: -50 },
+    "center-right": { x: 100, y: 50, translateX: -100, translateY: -50 },
+    "bottom-left": { x: 0, y: 100, translateX: 0, translateY: -100 },
+    "bottom-center": { x: 50, y: 100, translateX: -50, translateY: -100 },
+    "bottom-right": { x: 100, y: 100, translateX: -100, translateY: -100 }
+  };
+  const preset = presets[position];
+
+  return {
+    ...preset,
+    x: xPercent ?? preset.x,
+    y: yPercent ?? preset.y
+  };
+}
+
+function getOverlayTextStyle(
+  overlay: Extract<Overlay, { type: "text" }>,
+  format: ResolvedRenderProps["video"]["format"],
+  theme: ResolvedRenderProps["video"]["theme"]
+): React.CSSProperties {
+  const basis = Math.min(format.width, format.height);
+  return {
+    color: overlay.color ?? theme.primaryTextColor,
+    backgroundColor: overlay.backgroundColor,
+    fontSize: Math.round(basis * (overlay.fontSizePercent / 100)),
+    fontWeight: 800,
+    lineHeight: 1.08,
+    maxWidth: `${overlay.maxWidthPercent}%`,
+    opacity: overlay.opacity,
+    padding: Math.round(basis * (overlay.paddingPercent / 100)),
+    textAlign: overlay.align,
+    whiteSpace: "pre-wrap"
+  };
+}
+
+function getGroupStyle(overlay: Extract<Overlay, { type: "group" }>, format: ResolvedRenderProps["video"]["format"]): React.CSSProperties {
+  const basis = Math.min(format.width, format.height);
+  const alignItems = {
+    start: "flex-start",
+    center: "center",
+    end: "flex-end",
+    stretch: "stretch"
+  }[overlay.align];
+
+  return {
+    display: "flex",
+    flexDirection: overlay.direction === "vertical" ? "column" : "row",
+    alignItems,
+    gap: Math.round(basis * (overlay.gapPercent / 100)),
+    maxWidth: `${overlay.maxWidthPercent}%`,
+    opacity: overlay.opacity
   };
 }
 

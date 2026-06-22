@@ -86,6 +86,11 @@ Text scenes support simple alignment:
 }
 ```
 
+For layered composition, use `overlays` on any scene. The generated schema is the
+source of truth for all fields, but the core model is: scene content first,
+then ordered overlays above it. A `group` overlay stacks child text/image
+overlays vertically or horizontally without arbitrary CSS.
+
 ## ElevenLabs
 
 Voiceover generation requires:

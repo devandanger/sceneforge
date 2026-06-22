@@ -75,4 +75,5 @@ Note the schema imports `zod/v3` and uses `zod-to-json-schema` (jsonSchema7 targ
 - Every scene is wrapped in a `BrandFrame` that applies padding, background style, and the optional top rule. Visual branching keys off the resolved `template` string (e.g. `template.toLowerCase().includes("blazebite")` switches background gradients) — `template` falls back to `theme.brand` when unset.
 - Padding: explicit `format.padding` (px) wins; otherwise `paddingPercent` (default 8%) of the shorter side.
 - Transitions are frame-interpolated opacity fades (plus optional `slide-up`); `transition: "none"` opts out.
+- Scene `overlays` render after the base scene content, so array order behaves like a Z-stack. `group` overlays provide constrained vertical/horizontal stacking for child text/image overlays; keep layout fields percent-based and enum-driven, not arbitrary CSS.
 - `fileUrl` passes through `http`/`file`/`data` URLs and prefixes bare paths with `file://`. Since props arrive as data URLs, the data-URL branch is the live path.

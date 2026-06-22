@@ -122,6 +122,44 @@ test("writeResolvedProps inlines assets as base64 data URLs", () => {
   assert.equal(props.totalDurationSeconds, 7);
 });
 
+test("overlay image assets are validated and inlined", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "sf-overlay-"));
+  fs.mkdirSync(path.join(dir, "assets"));
+  fs.writeFileSync(path.join(dir, "assets/logo.svg"), "<svg xmlns=\"http://www.w3.org/2000/svg\"/>");
+  const file = path.join(dir, "video.json");
+  fs.writeFileSync(
+    file,
+    JSON.stringify({
+      format: {},
+      theme: { brand: "X" },
+      scenes: [
+        {
+          type: "text",
+          duration: 1,
+          title: "Overlay",
+          overlays: [
+            { type: "image", src: "./assets/logo.svg", position: "top-right", widthPercent: 12 },
+            {
+              type: "group",
+              position: "bottom-left",
+              children: [{ type: "image", src: "./assets/logo.svg", widthPercent: 18 }]
+            }
+          ]
+        }
+      ]
+    })
+  );
+
+  const res = loadAndResolveVideo(file);
+  assert.equal(res.ok, true);
+  if (!res.ok) return;
+
+  const propsPath = writeResolvedProps(res.value);
+  const props = JSON.parse(fs.readFileSync(propsPath, "utf8"));
+  assert.match(props.scenes[0].overlays[0].src, /^data:image\/svg\+xml;base64,/);
+  assert.match(props.scenes[0].overlays[1].children[0].src, /^data:image\/svg\+xml;base64,/);
+});
+
 test("resolveExistingAsset returns absolute path or throws", () => {
   const projectDir = path.join(repoRoot, "examples/simple-no-ai");
   const resolved = resolveExistingAsset(projectDir, "./assets/brand-card.svg");
@@ -133,4 +171,5 @@ test("exportVideoJsonSchema carries field descriptions for agent discovery", () 
   const json = JSON.stringify(exportVideoJsonSchema());
   // Descriptions are the discovery surface; a known one must be present and inlined.
   assert.ok(json.includes("Horizontal text alignment within the brand frame."));
+  assert.ok(json.includes("Overlay rendered above the scene base layer"));
 });

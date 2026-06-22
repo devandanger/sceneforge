@@ -45,7 +45,35 @@
       "duration": 3,
       "transition": "fade",
       "image": "./assets/brand-card.svg",
-      "caption": "Local assets only. No AI services."
+      "caption": "Local assets only. No AI services.",
+      "overlays": [
+        {
+          "type": "group",
+          "position": "bottom-left",
+          "direction": "vertical",
+          "align": "start",
+          "gapPercent": 1,
+          "maxWidthPercent": 70,
+          "children": [
+            {
+              "type": "text",
+              "text": "Overlay group",
+              "fontSizePercent": 4.8,
+              "color": "#FFFFFF",
+              "backgroundColor": "#121212",
+              "paddingPercent": 1
+            },
+            {
+              "type": "text",
+              "text": "Stacked text without arbitrary CSS.",
+              "fontSizePercent": 3.2,
+              "color": "#121212",
+              "backgroundColor": "#FFFFFF",
+              "paddingPercent": 0.8
+            }
+          ]
+        }
+      ]
     },
     {
       "id": "cta",
