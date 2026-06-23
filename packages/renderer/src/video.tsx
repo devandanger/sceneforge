@@ -4,7 +4,9 @@ import {
   Audio,
   Img,
   interpolate,
+  OffthreadVideo,
   Sequence,
+  staticFile,
   useCurrentFrame,
   useVideoConfig
 } from "remotion";
@@ -56,6 +58,31 @@ function Scene({ scene, props, template }: { scene: ResolvedScene; props: Resolv
     return (
       <BrandFrame format={props.video.format} theme={theme} template={template} style={baseStyle}>
         <FullImage padding={padding} src={scene.imagePath} />
+        {scene.caption ? <Caption padding={padding}>{scene.caption}</Caption> : null}
+        <OverlayLayer format={props.video.format} overlays={scene.overlays} theme={theme} />
+      </BrandFrame>
+    );
+  }
+
+  if (scene.type === "video") {
+    const padding = getPadding(props.video.format);
+    return (
+      <BrandFrame format={props.video.format} theme={theme} template={template} style={baseStyle}>
+        <div
+          style={{
+            ...styles.imageShell,
+            inset: `${padding + 64}px ${Math.max(0, padding - 28)}px ${padding + 244}px`
+          }}
+        >
+          <OffthreadVideo
+            src={videoSrcUrl(scene.videoSrc)}
+            trimBefore={Math.round((scene.trimStart ?? 0) * fps)}
+            muted={scene.muted}
+            volume={scene.muted ? 0 : scene.volume}
+            playbackRate={scene.playbackRate}
+            style={{ width: "100%", height: "100%", objectFit: scene.fit }}
+          />
+        </div>
         {scene.caption ? <Caption padding={padding}>{scene.caption}</Caption> : null}
         <OverlayLayer format={props.video.format} overlays={scene.overlays} theme={theme} />
       </BrandFrame>
@@ -223,6 +250,7 @@ function OverlayItem({
   overlay: Overlay;
   theme: ResolvedRenderProps["video"]["theme"];
 }) {
+  const { fps } = useVideoConfig();
   const frameStyle = inGroup ? undefined : getOverlayPositionStyle(overlay, format);
 
   if (overlay.type === "text") {
@@ -237,6 +265,21 @@ function OverlayItem({
     return (
       <div style={{ ...frameStyle, width: `${overlay.widthPercent}%`, opacity: overlay.opacity }}>
         <Img src={fileUrl(overlay.src)} style={{ width: "100%", display: "block" }} />
+      </div>
+    );
+  }
+
+  if (overlay.type === "video") {
+    return (
+      <div style={{ ...frameStyle, width: `${overlay.widthPercent}%`, opacity: overlay.opacity }}>
+        <OffthreadVideo
+          src={videoSrcUrl(overlay.src)}
+          trimBefore={Math.round((overlay.trimStart ?? 0) * fps)}
+          muted={overlay.muted}
+          volume={overlay.muted ? 0 : overlay.volume}
+          playbackRate={overlay.playbackRate}
+          style={{ width: "100%", display: "block" }}
+        />
       </div>
     );
   }
@@ -361,6 +404,19 @@ function fileUrl(src?: string) {
     return src;
   }
   return `file://${src}`;
+}
+
+// Video clips are staged into the Remotion public dir and referenced by name, so
+// a bare staged name resolves via staticFile(); http(s) URLs pass through. This
+// loads in both Studio (over http) and render, unlike a file:// path.
+function videoSrcUrl(src?: string) {
+  if (!src) {
+    return "";
+  }
+  if (src.startsWith("http") || src.startsWith("data:") || src.startsWith("file:")) {
+    return src;
+  }
+  return staticFile(src);
 }
 
 const styles: Record<string, React.CSSProperties> = {

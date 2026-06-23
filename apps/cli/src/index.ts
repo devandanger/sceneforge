@@ -7,6 +7,7 @@ import {
   exportVideoJsonSchema,
   loadAndResolveVideo,
   printValidationErrors,
+  publicDirFor,
   writeResolvedProps
 } from "@sceneforge/schema";
 import { ensureVoiceover } from "@sceneforge/tts";
@@ -192,16 +193,19 @@ async function main() {
   const voiceoverPath = await ensureVoiceover(context);
   const propsPath = writeResolvedProps(context, voiceoverPath);
   const rendererEntry = getRendererEntry();
+  // Serve staged video clips (see writeResolvedProps) so staticFile() resolves in
+  // both Studio (over http) and render. Harmless when no video scenes are present.
+  const publicDir = publicDirFor(context);
 
   if (command === "preview") {
     // Interactive Remotion Studio; not intended for agentic/headless use.
-    runRemotion(["preview", rendererEntry, "--props", propsPath]);
+    runRemotion(["preview", rendererEntry, "--props", propsPath, "--public-dir", publicDir]);
     return;
   }
 
   if (command === "render") {
     const finalOutput = path.resolve(outputPath ?? path.join(context.projectDir, "output.mp4"));
-    const ok = runRemotion(["render", rendererEntry, "SceneForge", finalOutput, "--props", propsPath]);
+    const ok = runRemotion(["render", rendererEntry, "SceneForge", finalOutput, "--props", propsPath, "--public-dir", publicDir]);
     if (jsonMode) {
       emit(
         ok

@@ -64,14 +64,14 @@ The render pipeline is a one-way data flow, orchestrated by `apps/cli/src/index.
 
 1. **`@sceneforge/schema`** (`loadAndResolveVideo`) — reads `video.json`, validates against the Zod `VideoSchema`, and resolves it into a `VideoContext`. Resolution computes each scene's `startSeconds` (cumulative cursor over `duration`) and resolves relative `image` paths to absolute paths, erroring on missing assets.
 2. **`@sceneforge/tts`** (`ensureVoiceover`) — if `audio.voiceover` is present, calls ElevenLabs and returns a cached MP3 path. Returns `undefined` when no voiceover is configured or `SCENEFORGE_SKIP_TTS=1`.
-3. **`@sceneforge/schema`** (`writeResolvedProps`) — serializes a `ResolvedRenderProps` to `.cache/render-props.json`. **Assets are inlined as base64 data URLs here** (`assetDataUrl`), so the renderer is self-contained and needs no filesystem access to project assets.
+3. **`@sceneforge/schema`** (`writeResolvedProps`) — serializes a `ResolvedRenderProps` to `.cache/render-props.json`. **Image/audio assets are inlined as base64 data URLs here** (`assetDataUrl`), so the renderer needs no filesystem access to them. **Video clips are the exception**: `OffthreadVideo` reads a real file/URL via ffmpeg and can't use a data URL, so local clips are *copied* into a served public dir (`stageVideoAsset` → `.cache/public/<hash>.<ext>`, keyed by path+size+mtime) and referenced by `staticFile(name)`; `http(s)` srcs pass through. The CLI passes `--public-dir` (`publicDirFor`) to both `preview` and `render` so the clip loads in Studio (over http) and at render time — a plain `file://` path would 404 in the browser.
 4. **`@sceneforge/renderer`** — the CLI shells out to `npx remotion` (`preview`/`render`) pointed at `packages/renderer/src/remotion-entry.tsx`, passing `--props .cache/render-props.json`. Composition id is `SceneForge`; `calculateMetadata` derives dimensions/fps/duration from props.
 
 `packages/templates` is currently an empty placeholder package.
 
 ### Schema is the contract
 
-`packages/schema/src/index.ts` is the single source of truth. Scenes are a Zod `discriminatedUnion` on `type`: `text`, `image`, `screenshot`, `cta`. To add a scene type or field, change the Zod schema **and** the matching render branch in `packages/renderer/src/video.tsx` (`Scene` does a `scene.type === ...` switch). The JSON Schema is generated from these Zod definitions via `exportVideoJsonSchema` — don't hand-edit schema JSON.
+`packages/schema/src/index.ts` is the single source of truth. Scenes are a Zod `discriminatedUnion` on `type`: `text`, `image`, `screenshot`, `cta`, `video`. To add a scene type or field, change the Zod schema **and** the matching render branch in `packages/renderer/src/video.tsx` (`Scene` does a `scene.type === ...` switch). Overlays are likewise a discriminated union (`text`, `image`, `video`, `group`); a `video` overlay is the picture-in-picture form of a clip. The JSON Schema is generated from these Zod definitions via `exportVideoJsonSchema` — don't hand-edit schema JSON.
 
 Note the schema imports `zod/v3` and uses `zod-to-json-schema` (jsonSchema7 target); keep new schema code on the v3 API surface.
 

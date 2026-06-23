@@ -67,9 +67,125 @@ test("VideoSchema rejects a non-hex color", () => {
 test("VideoSchema rejects an unknown scene type (discriminated union)", () => {
   const res = VideoSchema.safeParse({
     ...minimalValid,
-    scenes: [{ type: "video", duration: 1 }]
+    scenes: [{ type: "carousel", duration: 1 }]
   });
   assert.equal(res.success, false);
+});
+
+test("video scene applies clip defaults", () => {
+  const res = VideoSchema.safeParse({
+    ...minimalValid,
+    scenes: [{ type: "video", duration: 4, src: "./clip.mp4" }]
+  });
+  assert.equal(res.success, true);
+  if (res.success) {
+    const scene = res.data.scenes[0];
+    if (scene.type === "video") {
+      assert.equal(scene.fit, "cover");
+      assert.equal(scene.muted, false);
+      assert.equal(scene.volume, 1);
+      assert.equal(scene.trimStart, 0);
+      assert.equal(scene.playbackRate, 1);
+    }
+  }
+});
+
+test("video scene requires a src", () => {
+  const res = VideoSchema.safeParse({
+    ...minimalValid,
+    scenes: [{ type: "video", duration: 4 }]
+  });
+  assert.equal(res.success, false);
+  if (!res.success) {
+    assert.ok(res.error.issues.some((i) => i.path.join(".") === "scenes.0.src"));
+  }
+});
+
+test("local video clips are staged into the public dir, not base64-inlined", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "sf-video-"));
+  fs.writeFileSync(path.join(dir, "clip.mp4"), "fake-mp4-bytes");
+  const file = path.join(dir, "video.json");
+  fs.writeFileSync(
+    file,
+    JSON.stringify({
+      format: {},
+      theme: { brand: "X" },
+      scenes: [{ type: "video", duration: 2, src: "./clip.mp4" }]
+    })
+  );
+
+  const res = loadAndResolveVideo(file);
+  assert.equal(res.ok, true);
+  if (!res.ok) return;
+
+  // Resolution records the absolute source path (existence validated like images).
+  const scene = res.value.scenes[0];
+  assert.ok(scene.videoSrc && path.isAbsolute(scene.videoSrc) && fs.existsSync(scene.videoSrc));
+
+  const propsPath = writeResolvedProps(res.value);
+  const props = JSON.parse(fs.readFileSync(propsPath, "utf8"));
+  const staged = props.scenes[0].videoSrc;
+  // Bare staticFile name, NOT a data URL, and the file is served from public/.
+  assert.ok(!staged.startsWith("data:"));
+  assert.match(staged, /^[0-9a-f]{16}\.mp4$/);
+  assert.ok(fs.existsSync(path.join(res.value.cacheDir, "public", staged)));
+});
+
+test("remote video URLs pass through without staging", () => {
+  const file = tmpVideo(
+    JSON.stringify({
+      format: {},
+      theme: { brand: "X" },
+      scenes: [{ type: "video", duration: 2, src: "https://cdn.example.com/clip.mp4" }]
+    })
+  );
+  const res = loadAndResolveVideo(file);
+  assert.equal(res.ok, true);
+  if (!res.ok) return;
+  const propsPath = writeResolvedProps(res.value);
+  const props = JSON.parse(fs.readFileSync(propsPath, "utf8"));
+  assert.equal(props.scenes[0].videoSrc, "https://cdn.example.com/clip.mp4");
+});
+
+test("loadAndResolveVideo throws on a missing local video clip", () => {
+  const file = tmpVideo(
+    JSON.stringify({
+      format: {},
+      theme: { brand: "X" },
+      scenes: [{ type: "video", duration: 1, src: "./missing.mp4" }]
+    })
+  );
+  assert.throws(() => loadAndResolveVideo(file), /Missing local asset/);
+});
+
+test("video overlay clips are staged, not inlined", () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "sf-voverlay-"));
+  fs.writeFileSync(path.join(dir, "pip.webm"), "fake-webm-bytes");
+  const file = path.join(dir, "video.json");
+  fs.writeFileSync(
+    file,
+    JSON.stringify({
+      format: {},
+      theme: { brand: "X" },
+      scenes: [
+        {
+          type: "text",
+          duration: 1,
+          title: "PiP",
+          overlays: [{ type: "video", src: "./pip.webm", position: "bottom-right", widthPercent: 25 }]
+        }
+      ]
+    })
+  );
+
+  const res = loadAndResolveVideo(file);
+  assert.equal(res.ok, true);
+  if (!res.ok) return;
+  const propsPath = writeResolvedProps(res.value);
+  const props = JSON.parse(fs.readFileSync(propsPath, "utf8"));
+  const staged = props.scenes[0].overlays[0].src;
+  assert.match(staged, /^[0-9a-f]{16}\.webm$/);
+  assert.ok(fs.existsSync(path.join(res.value.cacheDir, "public", staged)));
 });
 
 test("loadAndResolveVideo computes cumulative timing and resolves assets", () => {

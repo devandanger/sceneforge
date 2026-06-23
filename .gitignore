@@ -4,4 +4,8 @@ dist/
 *.mp4
 *.mov
 *.webm
+# Example media are intentional, committed fixtures (not render outputs).
+!examples/**/assets/*.mp4
+!examples/**/assets/*.mov
+!examples/**/assets/*.webm
 .DS_Store

@@ -25,7 +25,7 @@ export async function ensureVoiceover(context: VideoContext): Promise<string | u
     throw new Error("Missing voice id. Set ELEVENLABS_DEFAULT_VOICE_ID or provide audio.voiceover.voiceId.");
   }
 
-  const key = hash(`${voiceId}:${voiceover.script}`);
+  const key = hash(`${voiceId}:${voiceover.modelId}:${voiceover.languageCode ?? ""}:${voiceover.outputFormat}:${voiceover.script}`);
   const outputPath = path.join(context.cacheDir, `voiceover-${key}.mp3`);
   if (fs.existsSync(outputPath)) {
     return outputPath;
@@ -36,7 +36,8 @@ export async function ensureVoiceover(context: VideoContext): Promise<string | u
     throw new Error("Missing ELEVENLABS_API_KEY. Set it before running sceneforge tts, preview, or render with voiceover.");
   }
 
-  const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+  const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=${voiceover.outputFormat}`;
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       "xi-api-key": apiKey,
@@ -45,7 +46,8 @@ export async function ensureVoiceover(context: VideoContext): Promise<string | u
     },
     body: JSON.stringify({
       text: voiceover.script,
-      model_id: "eleven_multilingual_v2",
+      model_id: voiceover.modelId,
+      ...(voiceover.languageCode ? { language_code: voiceover.languageCode } : {}),
       voice_settings: {
         stability: 0.45,
         similarity_boost: 0.8

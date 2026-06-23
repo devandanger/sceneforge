@@ -1,0 +1,57 @@
+{
+  "version": "0.1",
+  "template": "dark",
+  "format": { "platform": "tiktok", "width": 540, "height": 960, "fps": 30 },
+  "theme": {
+    "brand": "SceneForge",
+    "backgroundColor": "#101820",
+    "primaryTextColor": "#F7F2E8",
+    "accentColor": "#D9482B",
+    "fontFamily": "Inter"
+  },
+  "audio": {},
+  "scenes": [
+    {
+      "type": "text",
+      "duration": 2,
+      "title": "Now with video",
+      "subtitle": "Drop a clip into any scene.",
+      "align": "left",
+      "verticalAlign": "center"
+    },
+    {
+      "type": "video",
+      "duration": 3,
+      "src": "./assets/clip.mp4",
+      "fit": "cover",
+      "muted": true,
+      "trimStart": 0.5,
+      "caption": "Full-bleed clip, cut to the scene"
+    },
+    {
+      "type": "text",
+      "duration": 3,
+      "title": "Picture-in-picture, too",
+      "subtitle": "Clips work as overlays.",
+      "align": "left",
+      "verticalAlign": "top",
+      "overlays": [
+        {
+          "type": "video",
+          "src": "./assets/clip.mp4",
+          "position": "bottom-right",
+          "widthPercent": 38,
+          "muted": true,
+          "playbackRate": 1.5
+        }
+      ]
+    },
+    {
+      "type": "cta",
+      "duration": 2,
+      "title": "Ship it",
+      "subtitle": "sceneforge render video.json",
+      "cta": "Get started"
+    }
+  ]
+}

@@ -1,7 +1,16 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod/v3";
 import { zodToJsonSchema } from "zod-to-json-schema";
+
+// Video assets are streamed by Remotion's OffthreadVideo, which reads a real
+// file/URL via ffmpeg and cannot use a base64 data URL. So, unlike images/audio
+// (which writeResolvedProps inlines), video clips are served from a static
+// public dir and referenced by name; isRemote() short-circuits http(s) sources.
+function isRemote(src: string): boolean {
+  return /^https?:\/\//i.test(src);
+}
 
 const HexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Expected a 6-digit hex color.");
 const CssColor = z.string().min(1).describe("Text or fill color as a CSS-compatible color string, preferably a hex color.");
@@ -43,9 +52,24 @@ const ImageOverlay = z.object({
   opacity: z.number().min(0).max(1).default(1).describe("Overlay opacity from 0 to 1.")
 });
 
+const VideoOverlay = z.object({
+  type: z.literal("video").describe("Discriminator for a video clip overlay (picture-in-picture)."),
+  src: z.string().min(1).describe("Path to a local video file (mp4/webm/mov) relative to video.json, or an http(s) URL. Served as a static file, never base64-inlined."),
+  position: OverlayPosition.default("center").describe("Preset placement within the full video frame; ignored when nested inside a group."),
+  xPercent: z.number().min(0).max(100).optional().describe("Optional horizontal anchor as a percent of video width; overrides position horizontally."),
+  yPercent: z.number().min(0).max(100).optional().describe("Optional vertical anchor as a percent of video height; overrides position vertically."),
+  widthPercent: z.number().positive().max(100).default(30).describe("Rendered clip width as a percent of video width; height follows the clip's aspect ratio."),
+  muted: z.boolean().default(false).describe("Mute the clip's own audio track."),
+  volume: z.number().min(0).max(1).default(1).describe("Clip audio volume from 0 to 1; ignored when muted."),
+  trimStart: z.number().min(0).default(0).describe("Seconds skipped from the clip start before the overlay begins."),
+  playbackRate: z.number().positive().max(8).default(1).describe("Playback speed multiplier; 2 plays twice as fast."),
+  opacity: z.number().min(0).max(1).default(1).describe("Overlay opacity from 0 to 1.")
+});
+
 const GroupChildOverlay = z.discriminatedUnion("type", [
   TextOverlay.omit({ position: true, xPercent: true, yPercent: true }),
-  ImageOverlay.omit({ position: true, xPercent: true, yPercent: true })
+  ImageOverlay.omit({ position: true, xPercent: true, yPercent: true }),
+  VideoOverlay.omit({ position: true, xPercent: true, yPercent: true })
 ]).describe("Overlay that can be nested inside a group; children are laid out by the group.");
 
 const GroupOverlay = z.object({
@@ -64,6 +88,7 @@ const GroupOverlay = z.object({
 const OverlaySchema = z.discriminatedUnion("type", [
   TextOverlay,
   ImageOverlay,
+  VideoOverlay,
   GroupOverlay
 ]).describe("Overlay rendered above the scene base layer; array order controls stacking order.");
 
@@ -106,11 +131,23 @@ const CtaScene = BaseScene.extend({
   cta: z.string().optional().describe("Optional button-style call-to-action label.")
 });
 
+const VideoScene = BaseScene.extend({
+  type: z.literal("video").describe("Discriminator for a full-bleed video clip scene."),
+  src: z.string().min(1).describe("Path to a local video file (mp4/webm/mov) relative to video.json, or an http(s) URL. Served as a static file, never base64-inlined. The clip is cut to the scene's duration; trimStart offsets the in-point."),
+  fit: z.enum(["cover", "contain"]).default("cover").describe("How the clip fills the brand frame: cover crops to fill, contain letterboxes to fit."),
+  muted: z.boolean().default(false).describe("Mute the clip's own audio track (set true when a separate voiceover should dominate)."),
+  volume: z.number().min(0).max(1).default(1).describe("Clip audio volume from 0 to 1; ignored when muted."),
+  trimStart: z.number().min(0).default(0).describe("Seconds skipped from the clip start before the scene begins."),
+  playbackRate: z.number().positive().max(8).default(1).describe("Playback speed multiplier; 2 plays twice as fast."),
+  caption: z.string().optional().describe("Optional caption rendered over the bottom of the clip.")
+});
+
 export const SceneSchema = z.discriminatedUnion("type", [
   TextScene,
   ImageScene,
   ScreenshotScene,
-  CtaScene
+  CtaScene,
+  VideoScene
 ]);
 
 export const VideoSchema = z.object({
@@ -141,7 +178,10 @@ export const VideoSchema = z.object({
     voiceover: z.object({
       provider: z.literal("elevenlabs").describe("TTS provider; only \"elevenlabs\" is supported."),
       voiceId: z.string().default("default").describe("ElevenLabs voice id; \"default\" uses ELEVENLABS_DEFAULT_VOICE_ID."),
-      script: z.string().min(1).describe("Voiceover script text to synthesize.")
+      script: z.string().min(1).describe("Voiceover script text to synthesize."),
+      modelId: z.string().default("eleven_multilingual_v2").describe("ElevenLabs model id, e.g. \"eleven_v3\" (expressive) or \"eleven_multilingual_v2\" (default)."),
+      languageCode: z.string().optional().describe("Optional ISO 639-1 language hint (e.g. \"sl\") passed to ElevenLabs to steer pronunciation."),
+      outputFormat: z.enum(["mp3_44100_128", "mp3_44100_64", "mp3_22050_32"]).default("mp3_44100_128").describe("ElevenLabs audio output format (sample rate + bitrate).")
     }).optional().describe("ElevenLabs text-to-speech voiceover."),
     music: z.object({
       mode: z.enum(["none", "file"]).default("none").describe("Music source: none, or a local file."),
@@ -163,6 +203,7 @@ type AnyOverlayValue = Overlay | GroupChildOverlayValue;
 
 export type ResolvedScene = Scene & {
   imagePath?: string;
+  videoSrc?: string;
   startSeconds: number;
 };
 
@@ -207,6 +248,12 @@ export function loadAndResolveVideo(videoJsonPath: string): { ok: true; value: V
       resolved.imagePath = resolveExistingAsset(projectDir, scene.image);
     }
 
+    if (scene.type === "video") {
+      // Validate existence now (matching images); actual staging into the public
+      // dir happens in writeResolvedProps, which owns the cache directory.
+      resolved.videoSrc = isRemote(scene.src) ? scene.src : resolveExistingAsset(projectDir, scene.src);
+    }
+
     validateOverlayAssets(projectDir, scene.overlays);
 
     cursor += scene.duration;
@@ -226,15 +273,25 @@ export function loadAndResolveVideo(videoJsonPath: string): { ok: true; value: V
   };
 }
 
+// The directory Remotion serves via --public-dir; staged video clips live here
+// and are referenced by staticFile(name) so they load in both Studio (over http)
+// and render. Lives under .cache so it is gitignored alongside render-props.json.
+export function publicDirFor(context: { cacheDir: string }): string {
+  return path.join(context.cacheDir, "public");
+}
+
 export function writeResolvedProps(context: VideoContext, voiceoverPath?: string): string {
   const music = context.video.audio.music;
   const musicPath = music?.mode === "file" && music.file ? resolveExistingAsset(context.projectDir, music.file) : undefined;
+  const publicDir = publicDirFor(context);
+  fs.mkdirSync(publicDir, { recursive: true });
   const props: ResolvedRenderProps = {
     video: context.video,
     scenes: context.scenes.map((scene) => ({
       ...scene,
       imagePath: scene.imagePath ? assetDataUrl(scene.imagePath) : undefined,
-      overlays: inlineOverlayAssets(context.projectDir, scene.overlays) as Overlay[] | undefined
+      videoSrc: scene.videoSrc ? stageVideoAsset(publicDir, scene.videoSrc) : undefined,
+      overlays: inlineOverlayAssets(context.projectDir, publicDir, scene.overlays) as Overlay[] | undefined
     })),
     voiceoverPath: voiceoverPath ? assetDataUrl(voiceoverPath) : undefined,
     musicPath: musicPath ? assetDataUrl(musicPath) : undefined,
@@ -245,6 +302,28 @@ export function writeResolvedProps(context: VideoContext, voiceoverPath?: string
   return propsPath;
 }
 
+// Stage a local clip into the public dir and return the bare staticFile name;
+// http(s) sources pass through untouched. We copy rather than symlink: Remotion's
+// render bundles the public dir into a temp webpack bundle and does not follow
+// symlinks, so a linked clip 404s at render time. The copy is keyed by source
+// path so it is reused across runs unless the source moves.
+function stageVideoAsset(publicDir: string, src: string): string {
+  if (isRemote(src)) {
+    return src;
+  }
+  const ext = path.extname(src).toLowerCase();
+  const stat = fs.statSync(src);
+  // Key on path + size + mtime so replacing the clip at the same path restages it
+  // (a stale copy would otherwise be reused), while unchanged clips skip the copy.
+  const fingerprint = `${src}:${stat.size}:${stat.mtimeMs}`;
+  const name = `${crypto.createHash("sha256").update(fingerprint).digest("hex").slice(0, 16)}${ext}`;
+  const dest = path.join(publicDir, name);
+  if (!fs.existsSync(dest)) {
+    fs.copyFileSync(src, dest);
+  }
+  return name;
+}
+
 function validateOverlayAssets(projectDir: string, overlays?: AnyOverlayValue[]) {
   if (!overlays) {
     return;
@@ -253,13 +332,17 @@ function validateOverlayAssets(projectDir: string, overlays?: AnyOverlayValue[])
   for (const overlay of overlays) {
     if (overlay.type === "image") {
       resolveExistingAsset(projectDir, overlay.src);
+    } else if (overlay.type === "video") {
+      if (!isRemote(overlay.src)) {
+        resolveExistingAsset(projectDir, overlay.src);
+      }
     } else if (overlay.type === "group") {
       validateOverlayAssets(projectDir, overlay.children);
     }
   }
 }
 
-function inlineOverlayAssets(projectDir: string, overlays?: AnyOverlayValue[]): AnyOverlayValue[] | undefined {
+function inlineOverlayAssets(projectDir: string, publicDir: string, overlays?: AnyOverlayValue[]): AnyOverlayValue[] | undefined {
   if (!overlays) {
     return undefined;
   }
@@ -272,10 +355,18 @@ function inlineOverlayAssets(projectDir: string, overlays?: AnyOverlayValue[]): 
       };
     }
 
+    if (overlay.type === "video") {
+      // Stage rather than inline (OffthreadVideo can't read data URLs).
+      return {
+        ...overlay,
+        src: stageVideoAsset(publicDir, isRemote(overlay.src) ? overlay.src : resolveExistingAsset(projectDir, overlay.src))
+      };
+    }
+
     if (overlay.type === "group") {
       return {
         ...overlay,
-        children: (inlineOverlayAssets(projectDir, overlay.children) ?? []) as GroupChildOverlayValue[]
+        children: (inlineOverlayAssets(projectDir, publicDir, overlay.children) ?? []) as GroupChildOverlayValue[]
       };
     }
 

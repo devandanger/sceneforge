@@ -67,11 +67,23 @@ test("throws a clear error when the API key is missing and nothing is cached", a
 
 test("returns the cached file without hitting the network", async () => {
   const cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), "sf-tts-cache-"));
-  const voiceover = { provider: "elevenlabs", voiceId: "voiceX", script: "cached script" };
+  // modelId/outputFormat carry their schema defaults; languageCode is unset.
+  const voiceover = {
+    provider: "elevenlabs",
+    voiceId: "voiceX",
+    script: "cached script",
+    modelId: "eleven_multilingual_v2",
+    outputFormat: "mp3_44100_128",
+  };
   const ctx = { cacheDir, video: { audio: { voiceover } } } as unknown as VideoContext;
 
-  // Mirror the cache key the implementation derives: sha256(voiceId:script), 12 hex chars.
-  const key = crypto.createHash("sha256").update("voiceX:cached script").digest("hex").slice(0, 12);
+  // Mirror the cache key the implementation derives:
+  // sha256(voiceId:modelId:languageCode:outputFormat:script), 12 hex chars.
+  const key = crypto
+    .createHash("sha256")
+    .update("voiceX:eleven_multilingual_v2::mp3_44100_128:cached script")
+    .digest("hex")
+    .slice(0, 12);
   const cachedPath = path.join(cacheDir, `voiceover-${key}.mp3`);
   fs.writeFileSync(cachedPath, "fake-audio");
 
