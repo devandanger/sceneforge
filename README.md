@@ -2,6 +2,8 @@
 
 SceneForge is a local-first JSON video builder for repeatable branded short-form marketing videos.
 
+![SceneForge preview](./docs/assets/sceneforge.png)
+
 ## Install
 
 ```sh
