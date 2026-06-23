@@ -1,6 +1,6 @@
 {
   "version": "0.1",
-  "template": "naprej",
+  "template": "light",
   "format": {
     "platform": "tiktok",
     "width": 1080,
@@ -8,14 +8,14 @@
     "fps": 30
   },
   "theme": {
-    "brand": "naprej",
-    "backgroundColor": "#F7F2E8",
-    "primaryTextColor": "#1E1E1E",
-    "accentColor": "#D9482B",
+    "brand": "Acme",
+    "backgroundColor": "#F5F3EF",
+    "primaryTextColor": "#1A1A1A",
+    "accentColor": "#2F6BFF",
     "fontFamily": "Inter",
     "layout": {
       "showBrandMark": true,
-      "brandMarkText": "Naprej",
+      "brandMarkText": "Acme",
       "showTopRule": true,
       "backgroundStyle": "soft"
     }
@@ -24,7 +24,7 @@
     "voiceover": {
       "provider": "elevenlabs",
       "voiceId": "default",
-      "script": "Want to reconnect with Slovenian? Naprej helps you learn useful phrases in tiny daily lessons."
+      "script": "Meet Acme, the simplest way to turn ideas into action. Plan, track, and ship in one place."
     },
     "music": {
       "mode": "none"
@@ -39,16 +39,17 @@
       "type": "text",
       "duration": 3,
       "transition": "fade",
-      "title": "Want to reconnect with Slovenian?",
-      "subtitle": "Start with tiny daily phrases."
+      "title": "Ship faster.",
+      "subtitle": "One workspace for your whole team.",
+      "titleColor": "#2F6BFF"
     },
     {
-      "id": "bled",
+      "id": "hero",
       "type": "image",
       "duration": 4,
       "transition": "fade",
-      "image": "./assets/lake-bled.svg",
-      "caption": "Built for heritage learners."
+      "image": "./assets/hero.svg",
+      "caption": "Built for focused teams."
     },
     {
       "id": "app",
@@ -56,16 +57,16 @@
       "duration": 4,
       "transition": "slide-up",
       "image": "./assets/app-screenshot.svg",
-      "title": "Practice real phrases"
+      "title": "Everything in one view"
     },
     {
       "id": "cta",
       "type": "cta",
       "duration": 3,
       "transition": "fade",
-      "title": "Naprej",
-      "subtitle": "Slovenian learning, one phrase at a time.",
-      "cta": "Follow for launch updates"
+      "title": "Acme",
+      "subtitle": "Get started in minutes.",
+      "cta": "Start free"
     }
   ]
 }

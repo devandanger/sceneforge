@@ -52,7 +52,7 @@ Vulnerability reporting and supported-version policy live in `SECURITY.md` (GitH
 ### Running without ElevenLabs credentials
 
 ```sh
-SCENEFORGE_SKIP_TTS=1 npm run sceneforge -- preview ./examples/naprej-launch/video.json
+SCENEFORGE_SKIP_TTS=1 npm run sceneforge -- preview ./examples/product-launch/video.json
 ```
 Voiceover requires `ELEVENLABS_API_KEY` and `ELEVENLABS_DEFAULT_VOICE_ID` (the latter used when a scene's `voiceId` is `"default"`). Generated MP3s are cached in each project's `.cache/` directory, keyed by a hash of voiceId+script.
 
@@ -84,7 +84,7 @@ Note the schema imports `zod/v3` and uses `zod-to-json-schema` (jsonSchema7 targ
 
 ### Rendering conventions (`packages/renderer/src/video.tsx`)
 
-- Every scene is wrapped in a `BrandFrame` that applies padding, background style, and the optional top rule. Visual branching keys off the resolved `template` string (e.g. `template.toLowerCase().includes("blazebite")` switches background gradients) — `template` falls back to `theme.brand` when unset.
+- Every scene is wrapped in a `BrandFrame` that applies padding, background style, and the optional top rule. Visual branching keys off the resolved `template` string (the enum is `light`/`dark`; `template.toLowerCase() === "dark"` switches to the dark gradient background) — `template` falls back to `theme.brand` when unset.
 - Padding: explicit `format.padding` (px) wins; otherwise `paddingPercent` (default 8%) of the shorter side.
 - Transitions are frame-interpolated opacity fades (plus optional `slide-up`); `transition: "none"` opts out.
 - Scene `overlays` render after the base scene content, so array order behaves like a Z-stack. `group` overlays provide constrained vertical/horizontal stacking for child text/image overlays; keep layout fields percent-based and enum-driven, not arbitrary CSS.

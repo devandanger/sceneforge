@@ -82,7 +82,9 @@ const TextScene = BaseScene.extend({
   title: z.string().min(1).describe("Primary headline text."),
   subtitle: z.string().optional().describe("Optional supporting line beneath the title."),
   align: z.enum(["left", "center", "right"]).default("left").describe("Horizontal text alignment within the brand frame."),
-  verticalAlign: z.enum(["top", "center", "bottom"]).default("center").describe("Vertical text alignment within the brand frame.")
+  verticalAlign: z.enum(["top", "center", "bottom"]).default("center").describe("Vertical text alignment within the brand frame."),
+  titleColor: CssColor.optional().describe("Color for the title text; defaults to theme.primaryTextColor."),
+  subtitleColor: CssColor.optional().describe("Color for the subtitle text; defaults to theme.primaryTextColor.")
 });
 
 const ImageScene = BaseScene.extend({
@@ -113,7 +115,7 @@ export const SceneSchema = z.discriminatedUnion("type", [
 
 export const VideoSchema = z.object({
   version: z.string().default("0.1").describe("SceneForge document schema version."),
-  template: z.enum(["naprej", "blazebite"]).optional().describe("Named visual template; falls back to theme.brand when unset."),
+  template: z.enum(["light", "dark"]).optional().describe("Named visual style; \"dark\" applies a dark gradient background, \"light\" the default soft look. Falls back to theme.brand when unset."),
   format: z.object({
     platform: z.string().default("tiktok").describe("Target platform label (informational)."),
     width: z.number().int().positive().default(1080).describe("Output width in pixels."),

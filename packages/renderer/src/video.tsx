@@ -94,8 +94,8 @@ function Scene({ scene, props, template }: { scene: ResolvedScene; props: Resolv
     <BrandFrame format={props.video.format} theme={theme} template={template} style={baseStyle}>
       <div style={getTextStackStyle(scene.align, scene.verticalAlign)}>
         <BrandMark theme={theme} />
-        <h1 style={{ ...styles.title, textAlign: scene.align }}>{scene.title}</h1>
-        {scene.subtitle ? <p style={{ ...styles.subtitle, textAlign: scene.align }}>{scene.subtitle}</p> : null}
+        <h1 style={{ ...styles.title, textAlign: scene.align, color: scene.titleColor ?? theme.primaryTextColor }}>{scene.title}</h1>
+        {scene.subtitle ? <p style={{ ...styles.subtitle, textAlign: scene.align, color: scene.subtitleColor ?? theme.primaryTextColor }}>{scene.subtitle}</p> : null}
       </div>
       <OverlayLayer format={props.video.format} overlays={scene.overlays} theme={theme} />
     </BrandFrame>
@@ -115,8 +115,8 @@ function BrandFrame({
   template: string;
   style: React.CSSProperties;
 }) {
-  const isBlazeBite = template.toLowerCase().includes("blazebite");
-  const background = getBackground(theme, isBlazeBite);
+  const isDark = template.toLowerCase() === "dark";
+  const background = getBackground(theme, isDark);
   const padding = getPadding(format);
   return (
     <AbsoluteFill
@@ -149,12 +149,12 @@ function BrandMark({ theme }: { theme: ResolvedRenderProps["video"]["theme"] }) 
   return <p style={{ ...styles.brandMark, color: theme.accentColor }}>{theme.layout.brandMarkText ?? theme.brand}</p>;
 }
 
-function getBackground(theme: ResolvedRenderProps["video"]["theme"], isBlazeBite: boolean) {
+function getBackground(theme: ResolvedRenderProps["video"]["theme"], isDark: boolean) {
   if (theme.layout.backgroundStyle === "flat") {
     return theme.backgroundColor;
   }
 
-  if (theme.layout.backgroundStyle === "bold" || isBlazeBite) {
+  if (theme.layout.backgroundStyle === "bold" || isDark) {
     return `linear-gradient(180deg, ${theme.backgroundColor} 0%, #101820 100%)`;
   }
 

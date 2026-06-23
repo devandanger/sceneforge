@@ -1,0 +1,84 @@
+{
+  "version": "0.1",
+  "template": "dark",
+  "format": {
+    "platform": "tiktok",
+    "width": 1080,
+    "height": 1920,
+    "fps": 30
+  },
+  "theme": {
+    "brand": "Nova",
+    "backgroundColor": "#14181F",
+    "primaryTextColor": "#F5F7FA",
+    "accentColor": "#FF6B35",
+    "fontFamily": "Inter",
+    "layout": {
+      "showBrandMark": true,
+      "brandMarkText": "Nova",
+      "showTopRule": true,
+      "backgroundStyle": "bold"
+    }
+  },
+  "audio": {
+    "voiceover": {
+      "provider": "elevenlabs",
+      "voiceId": "default",
+      "script": "Slow checkout costs you customers. Nova moves every order from cart to done in seconds."
+    },
+    "music": {
+      "mode": "none"
+    },
+    "captions": {
+      "mode": "scene"
+    }
+  },
+  "scenes": [
+    {
+      "id": "hook",
+      "type": "text",
+      "duration": 3,
+      "transition": "fade",
+      "title": "Checkout, in seconds.",
+      "subtitle": "On a dark template, set per-scene text colors for contrast.",
+      "titleColor": "#FF6B35",
+      "subtitleColor": "#C8D0DA"
+    },
+    {
+      "id": "scene",
+      "type": "image",
+      "duration": 3,
+      "transition": "fade",
+      "image": "./assets/scene.svg",
+      "caption": "Built for high-volume moments.",
+      "overlays": [
+        {
+          "type": "text",
+          "text": "LIVE",
+          "position": "top-right",
+          "fontSizePercent": 3.5,
+          "color": "#FFFFFF",
+          "backgroundColor": "#FF6B35",
+          "paddingPercent": 1.2
+        }
+      ]
+    },
+    {
+      "id": "screen",
+      "type": "screenshot",
+      "duration": 4,
+      "transition": "slide-up",
+      "image": "./assets/order-screen.svg",
+      "title": "From cart to done"
+    },
+    {
+      "id": "cta",
+      "type": "cta",
+      "duration": 2,
+      "transition": "fade",
+      "title": "Nova",
+      "subtitle": "Fast checkout for busy storefronts.",
+      "cta": "Book a demo"
+    }
+  ]
+}

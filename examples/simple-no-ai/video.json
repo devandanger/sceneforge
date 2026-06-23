@@ -1,6 +1,6 @@
 {
   "version": "0.1",
-  "template": "naprej",
+  "template": "light",
   "format": {
     "platform": "tiktok",
     "width": 1080,
@@ -37,7 +37,8 @@
       "title": "One JSON file.",
       "subtitle": "A short vertical video.",
       "align": "center",
-      "verticalAlign": "center"
+      "verticalAlign": "center",
+      "titleColor": "#2B6FD9"
     },
     {
       "id": "image",

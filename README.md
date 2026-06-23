@@ -74,7 +74,7 @@ The example also shows how to hide renderer chrome:
 
 It also sets `"format.paddingPercent": 8`, matching the default padding of 8% of the shorter video side.
 
-Text scenes support simple alignment:
+Text scenes support simple alignment and per-scene text colors:
 
 ```json
 {
@@ -82,9 +82,15 @@ Text scenes support simple alignment:
   "title": "One JSON file.",
   "subtitle": "A short vertical video.",
   "align": "center",
-  "verticalAlign": "center"
+  "verticalAlign": "center",
+  "titleColor": "#2B6FD9",
+  "subtitleColor": "#6B7280"
 }
 ```
+
+`titleColor` and `subtitleColor` accept any CSS color (hex recommended) and
+default to `theme.primaryTextColor` — handy for readable text on a `dark`
+template (`template: "dark"` applies a dark gradient background).
 
 For layered composition, use `overlays` on any scene. The generated schema is the
 source of truth for all fields, but the core model is: scene content first,
@@ -105,8 +111,8 @@ Generated voiceovers are cached in the video's local `.cache/` directory.
 For local renderer testing without TTS credentials:
 
 ```sh
-SCENEFORGE_SKIP_TTS=1 npm run sceneforge -- preview ./examples/naprej-launch/video.json
-SCENEFORGE_SKIP_TTS=1 npm run sceneforge -- render ./examples/naprej-launch/video.json
+SCENEFORGE_SKIP_TTS=1 npm run sceneforge -- preview ./examples/product-launch/video.json
+SCENEFORGE_SKIP_TTS=1 npm run sceneforge -- render ./examples/product-launch/video.json
 ```
 
 ## JSON Schema

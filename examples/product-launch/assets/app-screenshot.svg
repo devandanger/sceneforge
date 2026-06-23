@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 1060">
+  <rect width="520" height="1060" fill="#f5f3ef"/>
+  <rect x="42" y="78" width="436" height="120" rx="22" fill="#2f6bff"/>
+  <text x="64" y="153" font-family="Arial" font-size="44" font-weight="700" fill="#fff">Acme</text>
+  <rect x="42" y="260" width="436" height="210" rx="18" fill="#fff"/>
+  <text x="68" y="338" font-family="Arial" font-size="32" font-weight="700" fill="#1a1a1a">Today</text>
+  <text x="68" y="400" font-family="Arial" font-size="48" font-weight="800" fill="#2f6bff">3 tasks done</text>
+  <rect x="42" y="520" width="436" height="120" rx="18" fill="#e7e3db"/>
+  <rect x="42" y="680" width="436" height="120" rx="18" fill="#e7e3db"/>
+  <rect x="42" y="840" width="290" height="74" rx="14" fill="#1a1a1a"/>
+  <text x="72" y="889" font-family="Arial" font-size="28" font-weight="700" fill="#fff">Open</text>
+</svg>

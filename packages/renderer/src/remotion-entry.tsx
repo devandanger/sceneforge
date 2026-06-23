@@ -6,7 +6,7 @@ import type { ResolvedRenderProps } from "@sceneforge/schema";
 const defaultProps: ResolvedRenderProps = {
   video: {
     version: "0.1",
-    template: "naprej",
+    template: "light",
     format: {
       platform: "tiktok",
       width: 1080,
@@ -15,7 +15,7 @@ const defaultProps: ResolvedRenderProps = {
       paddingPercent: 8
     },
     theme: {
-      brand: "naprej",
+      brand: "SceneForge",
       backgroundColor: "#F7F2E8",
       primaryTextColor: "#1E1E1E",
       accentColor: "#D9482B",

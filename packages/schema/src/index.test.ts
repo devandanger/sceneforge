@@ -167,9 +167,33 @@ test("resolveExistingAsset returns absolute path or throws", () => {
   assert.throws(() => resolveExistingAsset(projectDir, "./nope.svg"), /Missing local asset/);
 });
 
+test("text scene accepts optional titleColor and subtitleColor", () => {
+  const res = VideoSchema.safeParse({
+    ...minimalValid,
+    scenes: [
+      { type: "text", duration: 1, title: "Hi", subtitle: "There", titleColor: "#FF0000", subtitleColor: "#00FF00" }
+    ]
+  });
+  assert.equal(res.success, true);
+  if (res.success) {
+    const scene = res.data.scenes[0];
+    if (scene.type === "text") {
+      assert.equal(scene.titleColor, "#FF0000");
+      assert.equal(scene.subtitleColor, "#00FF00");
+    }
+  }
+});
+
+test("template enum is the generic light/dark set", () => {
+  assert.equal(VideoSchema.safeParse({ ...minimalValid, template: "dark" }).success, true);
+  assert.equal(VideoSchema.safeParse({ ...minimalValid, template: "light" }).success, true);
+  assert.equal(VideoSchema.safeParse({ ...minimalValid, template: "naprej" }).success, false);
+});
+
 test("exportVideoJsonSchema carries field descriptions for agent discovery", () => {
   const json = JSON.stringify(exportVideoJsonSchema());
   // Descriptions are the discovery surface; a known one must be present and inlined.
   assert.ok(json.includes("Horizontal text alignment within the brand frame."));
   assert.ok(json.includes("Overlay rendered above the scene base layer"));
+  assert.ok(json.includes("Color for the title text"));
 });
