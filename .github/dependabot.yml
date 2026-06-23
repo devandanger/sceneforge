@@ -1,6 +1,8 @@
 version: 2
 updates:
-  # npm dependencies (grouped to reduce PR noise)
+  # npm dependencies (grouped to reduce PR noise). Only minor/patch updates are
+  # grouped — major bumps (e.g. typescript 6, @types/node 26) open as individual
+  # PRs so a single un-migratable major can't poison the whole grouped update.
   - package-ecosystem: npm
     directory: "/"
     schedule:
@@ -8,6 +10,7 @@ updates:
     groups:
       all-npm:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
 
   # GitHub Actions — keeps the SHA-pinned actions current
   - package-ecosystem: github-actions
