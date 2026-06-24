@@ -1,0 +1,14 @@
+{
+  "name": "sceneforge",
+  "owner": {
+    "name": "Evan Anger"
+  },
+  "plugins": [
+    {
+      "name": "sceneforge",
+      "source": "./",
+      "description": "Author, validate, and render branded short-form videos with SceneForge — drives the CLI's capabilities/schema/validate/render/tts commands.",
+      "skills": ["./.claude/skills/sceneforge"]
+    }
+  ]
+}

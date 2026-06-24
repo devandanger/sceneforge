@@ -60,6 +60,24 @@ flag (false for the interactive `preview`). `schema` is generated from the Zod
 definitions, so new scene types and fields appear automatically — each carries a
 `description`, enforced by `npm run check`.
 
+### Use with Claude Code
+
+This repo ships a [Claude Code](https://claude.com/claude-code) skill that teaches
+the assistant the SceneForge workflow (discover via `capabilities`/`schema`,
+author `video.json`, `validate --json`, then `render`). It loads automatically
+when you work **inside this repo** (it lives at `.claude/skills/sceneforge/`).
+
+To use it in **your own** projects, install the plugin from this repo's
+marketplace:
+
+```sh
+/plugin marketplace add devandanger/sceneforge
+/plugin install sceneforge@sceneforge
+```
+
+Both surfaces share one `SKILL.md`. Neither is published to npm — they live only
+in the git repo.
+
 ## No-AI Example
 
 `examples/simple-no-ai/video.json` has no voiceover, music generation, or external AI dependency. It only uses local JSON and `assets/brand-card.svg`, so it is the fastest smoke test for the renderer.
