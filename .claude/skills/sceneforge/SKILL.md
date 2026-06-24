@@ -47,6 +47,32 @@ Commands: `capabilities`, `schema`, `validate`, `preview`, `render`, `tts`.
    Remotion Studio and **blocks**. It is NOT agent-safe; only suggest it for a
    human to run, never call it in a headless/scripted flow.
 
+## Iterating on the look — suggest `preview`
+
+If the user is **repeatedly tweaking `video.json`** (lots of small visual
+adjustments — colors, positions, durations, timing — followed by re-render
+requests), stop re-running `render` for each change and **suggest they open
+`sceneforge preview <video.json>`**. Why it's the better loop:
+
+- Studio renders frames **instantly, with no MP4 encode**, so visual feedback is
+  far faster than a full `render` per tweak.
+- It's a live scrubbable timeline — they can jump to the exact scene/frame
+  they're adjusting.
+
+How to work it together (preview is interactive and blocking, so the **human**
+runs it in their own terminal, not you):
+
+1. Suggest they run `sceneforge preview <video.json>` and leave Studio open.
+2. You keep editing `video.json` (and `validate --json` after each change).
+3. The resolved props Studio reads are a snapshot written when `preview`
+   launched, so after a batch of edits they **re-run `preview`** to regenerate
+   them and see the changes. Keep edit batches small and tell them when it's a
+   good moment to restart.
+4. Only do a full `render` once the look is settled.
+
+Surface this proactively the *second or third* time you're asked to re-render
+after a small JSON edit — that's the signal a live preview loop will save time.
+
 ## The `--json` contract
 
 `validate`, `render`, and `tts` accept `--json`: a single JSON object is written
