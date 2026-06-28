@@ -39,12 +39,12 @@
     "packages/*"
   ],
   "dependencies": {
-    "@remotion/cli": "^4.0.300",
+    "@remotion/cli": "^4.0.484",
     "@remotion/renderer": "^4.0.300",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "remotion": "^4.0.300",
-    "zod": "4.3.6",
+    "zod": "4.4.3",
     "zod-to-json-schema": "^3.24.6"
   },
   "devDependencies": {
